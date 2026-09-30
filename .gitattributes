@@ -1,0 +1,24 @@
+# Normalização de line endings (o core.autocrlf=true global do Windows
+# geraria diffs ruidosos nos arquivos YAML do Unity)
+* text=auto eol=lf
+
+# Arquivos que devem permanecer CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Arquivos binários — nunca aplicar conversão de linha
+*.dll binary
+*.so binary
+*.a binary
+*.bundle binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.psd binary
+*.exr binary
+*.fbx binary
+*.blend binary
+*.unitypackage binary
+*.zip binary

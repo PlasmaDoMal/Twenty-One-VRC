@@ -1,0 +1,20 @@
+# ==============================================================
+# Política de source control da VRChat (VCC)
+#
+# O SDK da VRChat NÃO pode ser distribuído via controle de versão —
+# ele é licenciado e só pode ser distribuído pela VRChat.
+#
+# Esta regra é a mesma que o VCC/ALCOM gera automaticamente.
+# Ignore todos os pacotes VPM, mas mantenha versionados:
+#   - manifest.json          (dependências do Unity Package Manager)
+#   - vpm-manifest.json      (versões exatas dos pacotes VPM)
+#   - packages-lock.json     (lock do UPM)
+#   - com.vrchat.core.*/     (VPM Resolver, necesario p/ restaurar o SDK)
+#
+# Quem clonar o repositório reabre o projeto no Unity e o Resolver
+# restaura os pacotes ausentes automaticamente.
+#
+# Doc: https://vcc.docs.vrchat.com/vpm/source-control/
+# ==============================================================
+/*/
+/!com.vrchat.core.*/

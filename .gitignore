@@ -1,0 +1,85 @@
+# ==============================================================
+# Unity / VRChat World project — Git ignore rules
+# Unity 2022.3.22f1 + VCC (VRChat Creator Companion)
+# Baseado no .gitignore oficial do Unity + política de source control
+# da VRChat (https://vcc.docs.vrchat.com/vpm/source-control/)
+# ==============================================================
+
+# --- Pastas geradas pelo Unity (nunca versionar) ---
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/[Rr]uns/
+
+# --- ProjectSettings gerado pelo gerenciador de pacotes ---
+/[Pp]roject[Ss]ettings/[Pp]ackages/
+/[Pp]roject[Ss]ettings/[Pp]roject[Ss]ettings.asset.lnk
+
+# --- Metadados de assets: ignorar junto com o asset ---
+# Regra geral: todo .meta é versionado...
+*.[Mm]eta
+# ...exceto quando o asset correspondente está ignorado acima.
+!/[Aa]ssets/**/*.meta
+
+# --- Soluções e projetos gerados pelo IDE ---
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.idea/
+ExportedObj/
+.consulo/
+
+# --- Arquivos gerados pelo Unity em caso de crash ---
+sysinfo.txt
+crashlytics-build.properties
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# --- Artefatos de build ---
+*.apk
+*.aab
+*.unitypackage
+*.app
+*.app/
+crashlytics-build.properties
+
+# --- Addressables empacotados ---
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+
+# --- StreamingAssets gerados no Android ---
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# --- Arquivos gerados pelo SO / editores ---
+.DS_Store
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# --- Unity Collaborate (obsoleto) ---
+/[Uu]nity[Ll]ockfile
+/[Uu]nity[Ss]tate/
