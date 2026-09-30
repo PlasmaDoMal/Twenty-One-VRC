@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MenSharp;
 using UnityEngine;
+using VRC.SDKBase;
+using VRC.Udon.Common.Interfaces;
 
 /// <summary>
 /// Compra as cartas da maquina e as entrega na mao dos jogadores.
@@ -27,6 +29,7 @@ using UnityEngine;
 /// lugar de cada mao ou de onde a carta sai, basta arrastar outro objeto no
 /// Inspector.
 /// </summary>
+[UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
 public class CardDealer : MenSharpBehaviour
 {
     [Header("References")]
@@ -43,8 +46,31 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Cartas compradas na abertura da rodada. So na primeira: depois e hit ou stay.")]
     public int openingCards = 3;
 
-    [Tooltip("Qual das cartas da abertura e a especial. -1 = nenhuma.")]
-    public int specialCardIndex = 2;
+    [Header("Special card")]
+    [Tooltip("Marca como especial a primeira carta que cada jogador recebe na abertura. Como o baralho esta embaralhado, o numero delas tambem e sorteado.")]
+    public bool markFirstCardSpecial = true;
+
+    [Tooltip("Material das cartas especiais. Vazio = nao troca nada.")]
+    public Material hiddenMaterial;
+
+    [Tooltip("Esconde a face especial trocando o material. Deixa desligado ate o baralho de trumps entrar.")]
+    public bool hideSpecialCards = false;
+
+    [Header("Deck")]
+    [Tooltip("Menor numero do baralho. No Twenty One comeca em 1.")]
+    public int deckMinValue = 1;
+
+    [Tooltip("Maior numero do baralho, e tambem o limite de cartas da rodada. No Twenty One vai ate 11.")]
+    public int deckMaxValue = 11;
+
+    [Tooltip("Semente do embaralhamento. E sincronizada, entao todo mundo monta a mesma ordem; o dono sorteia uma nova por rodada.")]
+    [UdonSynced] public int deckSeed = 12345;
+
+    [Tooltip("Embaralha o baralho antes de comecar a rodada.")]
+    public bool shuffleDeck = true;
+
+    [Tooltip("Loga no console o baralho montado e cada carta comprada.")]
+    public bool logDeals = true;
 
     [Header("Turn")]
     [Tooltip("Quem pediu a jogada. So de quem e o turno, para a UI destacar a mao; a mao que recebe a carta e sempre a do parametro de Hit/Stay.")]
@@ -91,9 +117,14 @@ public class CardDealer : MenSharpBehaviour
     private List<GameObject> hand = new List<GameObject>();
     private List<int> handOf = new List<int>();
     private List<int> slotOf = new List<int>();
+    private List<int> cardValue = new List<int>();
     private List<bool> special = new List<bool>();
     private List<int> pendingTargets = new List<int>();
-    private List<int> pendingRounds = new List<int>();
+    private int[] deck = new int[0];
+    private int dealIndex = 0;
+    private uint randomState = 0;
+    private bool hasBuilt = false;
+    private int lastBuiltSeed = 0;
     private bool openingDealt = false;
     private bool dealing = false;
     private int flying = 0;
@@ -122,16 +153,246 @@ public class CardDealer : MenSharpBehaviour
         get { return openingDealt; }
     }
 
+    /// <summary>Quantas cartas tem no baralho desta rodada.</summary>
+    public int DeckCount
+    {
+        get { return deck != null ? deck.Length : 0; }
+    }
+
+    /// <summary>
+    /// Quantas cartas ainda faltam sair. E o limite da rodada: somando as duas
+    /// maos, nunca passa de <see cref="DeckCount"/>.
+    /// </summary>
+    public int DeckRemaining
+    {
+        get { return DeckCount - dealIndex; }
+    }
+
+    /// <summary>True quando nao ha mais carta nenhuma para comprar.</summary>
+    public bool DeckEmpty
+    {
+        get { return DeckRemaining <= 0; }
+    }
+
+    /// <summary>
+    /// O numero da carta <paramref name="cardIndex"/> da mesa, na ordem em que
+    /// foi comprada. Vale o que saiu do baralho, nao a posicao no leque.
+    /// </summary>
+    public int CardValue(int cardIndex)
+    {
+        return cardIndex >= 0 && cardIndex < cardValue.Count ? cardValue[cardIndex] : 0;
+    }
+
+    /// <summary>Quantas cartas o jogador <paramref name="playerIndex"/> tem na mao.</summary>
+    public int CardsInHand(int playerIndex)
+    {
+        int player = ClampPlayer(playerIndex);
+        int count = 0;
+        for (int i = 0; i < handOf.Count; i++)
+        {
+            if (handOf[i] == player)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /// <summary>Soma dos numeros na mao do jogador. E o placar do 21.</summary>
+    public int HandTotal(int playerIndex)
+    {
+        int player = ClampPlayer(playerIndex);
+        int sum = 0;
+        for (int i = 0; i < handOf.Count; i++)
+        {
+            if (handOf[i] == player)
+            {
+                sum += cardValue[i];
+            }
+        }
+        return sum;
+    }
+
     // ------------------------------------------------------------------ api
 
     /// <summary>
-    /// Abre a rodada: limpa a mesa e compra as cartas de abertura, alternando
-    /// entre as maos. E o unico momento em que as 3 cartas saem de uma vez.
+    /// Abre a rodada. Quem nao tem o baralho so pede: quem tem sorteia a
+    /// semente nova, manda pela rede e <see cref="OnDeserialization"/> roda em
+    /// todas as maquinas, para as tres comprarem exatamente as mesmas cartas.
+    /// Offline (editor, single player) nao ha dono, entao segue direto.
     /// </summary>
     public void StartRound()
     {
+        VRCPlayerApi local = Networking.LocalPlayer;
+        if (local != null && !Networking.IsOwner(local, gameObject))
+        {
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, "StartRound");
+            return;
+        }
+
+        NewSeed();
+        if (local != null)
+        {
+            RequestSerialization();
+        }
+        ApplySeed();
+    }
+
+    /// <summary>
+    /// Monta o baralho da rodada: uma carta de cada numero entre
+    /// <see cref="deckMinValue"/> e <see cref="deckMaxValue"/>, embaralhado. E
+    /// daqui que sai o limite de cartas: <see cref="deckMaxValue"/> - a
+    /// abertura ja tira algumas, entao o resto se divide entre os dois ate
+    /// acabar.
+    /// </summary>
+    private void BuildDeck()
+    {
+        int min = deckMinValue;
+        int max = deckMaxValue;
+        if (max < min)
+        {
+            int swap = min;
+            min = max;
+            max = swap;
+        }
+
+        deck = new int[max - min + 1];
+        for (int i = 0; i < deck.Length; i++)
+        {
+            deck[i] = min + i;
+        }
+        if (shuffleDeck)
+        {
+            for (int i = deck.Length - 1; i > 0; i--)
+            {
+                int j = NextRandomBelow(i + 1);
+                int taken = deck[i];
+                deck[i] = deck[j];
+                deck[j] = taken;
+            }
+        }
+        dealIndex = 0;
+        lastBuiltSeed = deckSeed;
+        hasBuilt = true;
+
+        if (logDeals)
+        {
+            Debug.Log("CardDealer: baralho de " + deck.Length + " cartas (" + min + " a " + max
+                + ", semente " + deckSeed + "): " + DeckString());
+        }
+    }
+
+    /// <summary>
+    /// Guarda o estado do gerador. O xorshift32 anda nos mesmos numeros em
+    /// qualquer cliente: e o que faz todo mundo sortear a mesma ordem a partir
+    /// da mesma <see cref="deckSeed"/>. O <c>UnityEngine.Random</c> nao serve,
+    /// porque cada cliente tem o proprio.
+    /// </summary>
+    private void SeedRandom(int seed)
+    {
+        uint state = (uint)seed;
+        if (state == 0u)
+        {
+            state = 2463534242u;
+        }
+        randomState = state;
+    }
+
+    private uint NextRandom()
+    {
+        uint x = randomState;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        randomState = x;
+        return x;
+    }
+
+    private int NextRandomBelow(int limit)
+    {
+        if (limit <= 1)
+        {
+            return 0;
+        }
+        return (int)(NextRandom() % (uint)limit);
+    }
+
+    /// <summary>
+    /// Garante que o baralho da mesa bate com a semente sincronizada. Chamado
+    /// antes de qualquer compra, para ninguem comprar de um baralho velho.
+    /// </summary>
+    private void EnsureDeck()
+    {
+        if (!hasBuilt || lastBuiltSeed != deckSeed)
+        {
+            SeedRandom(deckSeed);
+            BuildDeck();
+        }
+    }
+
+    /// <summary>
+    /// Sorteia a semente da rodada. So quem tem o baralho faz isso; o resto
+    /// recebe pelo <see cref="OnDeserialization"/>.
+    /// </summary>
+    private void NewSeed()
+    {
+        deckSeed = Random.Range(1, int.MaxValue);
+    }
+
+    /// <summary>
+    /// Roda aqui depois que a semente chegou. Monta o baralho, limpa a mesa e
+    /// compra a abertura. Todo mundo passa por este mesmo caminho, entao as
+    /// tres maquinas veem a mesma rodada.
+    ///
+    /// Publico porque e o mesmo caminho de quem entra atras: da para chamar
+    /// direto ao reconectar, sem esperar a rede mandar a semente de novo.
+    /// </summary>
+    public void ApplySeed()
+    {
+        hasBuilt = false;
+        EnsureDeck();
         ClearHand();
         DealOpeningHand();
+    }
+
+    /// <summary>Chegou estado novo da rede: refaz o baralho se a semente mudou.</summary>
+    public void OnDeserialization()
+    {
+        if (hasBuilt && lastBuiltSeed == deckSeed)
+        {
+            return;
+        }
+        ApplySeed();
+    }
+
+    /// <summary>
+    /// Pega a proxima carta do baralho. Devolve 0 quando nao ha mais nenhuma, o
+    /// que e o limite: uma carta so sai uma vez, entao ninguem pode repetir o
+    /// que o outro ja pegou.
+    /// </summary>
+    private int TakeNextValue()
+    {
+        if (deck == null || dealIndex < 0 || dealIndex >= deck.Length)
+        {
+            return 0;
+        }
+        int value = deck[dealIndex];
+        dealIndex++;
+        return value;
+    }
+
+    private string DeckString()
+    {
+        string text = "[";
+        for (int i = dealIndex; i < deck.Length; i++)
+        {
+            if (i > dealIndex)
+            {
+                text += ", ";
+            }
+            text += deck[i];
+        }
+        return text + "]";
     }
 
     /// <summary>Compra as cartas de abertura. So funciona uma vez por rodada.</summary>
@@ -145,13 +406,23 @@ public class CardDealer : MenSharpBehaviour
         {
             return;
         }
+        EnsureDeck();
+        if (DeckEmpty)
+        {
+            if (logDeals)
+            {
+                Debug.Log("CardDealer: baralho vazio, a abertura nao saiu.");
+            }
+            return;
+        }
         openingDealt = true;
         currentPlayer = 0;
         int hands = HandCount();
-        for (int i = 0; i < openingCards; i++)
+        int wanted = openingCards < DeckRemaining ? openingCards : DeckRemaining;
+        for (int i = 0; i < wanted; i++)
         {
             // alterna: 0, 1, 0, 1...
-            QueueCard(i % hands, i);
+            QueueCard(i % hands);
         }
         StartDraining();
     }
@@ -172,8 +443,17 @@ public class CardDealer : MenSharpBehaviour
             return;
         }
         int player = ClampPlayer(playerIndex);
+        EnsureDeck();
+        if (DeckEmpty)
+        {
+            if (logDeals)
+            {
+                Debug.Log("CardDealer: baralho acabou, o hit do jogador " + player + " foi ignorado.");
+            }
+            return;
+        }
         currentPlayer = player;
-        QueueCard(player, -1);
+        QueueCard(player);
         StartDraining();
     }
 
@@ -203,7 +483,6 @@ public class CardDealer : MenSharpBehaviour
     public void ClearHand()
     {
         pendingTargets.Clear();
-        pendingRounds.Clear();
         for (int i = 0; i < hand.Count; i++)
         {
             if (hand[i] != null)
@@ -214,6 +493,7 @@ public class CardDealer : MenSharpBehaviour
         hand.Clear();
         handOf.Clear();
         slotOf.Clear();
+        cardValue.Clear();
         special.Clear();
         openingDealt = false;
         currentPlayer = 0;
@@ -235,6 +515,7 @@ public class CardDealer : MenSharpBehaviour
         hand.RemoveAt(last);
         handOf.RemoveAt(last);
         slotOf.RemoveAt(last);
+        cardValue.RemoveAt(last);
         special.RemoveAt(last);
         RepositionHand();
     }
@@ -267,14 +548,30 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>
-    /// A carta <paramref name="cardIndex"/> da mesa (na ordem em que foi
-    /// comprada) e a carta especial da abertura?
+    /// Cada jogador ganha uma carta especial na abertura: a primeira que ele
+    /// recebe. Como o baralho ja vem embaralhado, o numero de cada uma tambem
+    /// e sorteado — dois jogadores podem virar com cartas diferentes.
+    ///
+    /// <paramref name="firstOfThatPlayer"/> e o que decide, e nao o numero: a
+    /// marca viaja com a carta, nao com a casa nem com a ordem da mesa.
     ///
     /// No jogo original uma das cartas da abertura e a oculta (Hush), que o
     /// oponente nao pode ver. Hoje a compra e a mesma de qualquer outra carta;
     /// o que falta e so o efeito — virar a carta para baixo e esconder o valor
-    /// dela do oponente — que entra junto com o baralho de trumps. A marca em
-    /// <see cref="specialCardIndex"/> e o indice da carta dentro da abertura.
+    /// dela do oponente — que entra junto com o baralho de trumps.
+    /// </summary>
+    private bool ShouldMarkSpecial(bool firstOfThatPlayer)
+    {
+        return markFirstCardSpecial && firstOfThatPlayer;
+    }
+
+    /// <summary>
+    /// A carta <paramref name="cardIndex"/> da mesa (na ordem em que foi
+    /// comprada) e a especial? Use <see cref="CardValue"/> para saber qual e o
+    /// numero dela.
+    ///
+    /// E o que a mecanica de tarot vai consultar antes de mexer numa carta: a
+    /// especial fica de fora do efeito.
     /// </summary>
     public bool IsSpecialCard(int cardIndex)
     {
@@ -283,10 +580,9 @@ public class CardDealer : MenSharpBehaviour
 
     // -------------------------------------------------------------- dealing
 
-    private void QueueCard(int target, int roundIndex)
+    private void QueueCard(int target)
     {
         pendingTargets.Add(target);
-        pendingRounds.Add(roundIndex);
     }
 
     private void StartDraining()
@@ -332,10 +628,22 @@ public class CardDealer : MenSharpBehaviour
         Transform machine = machineAnchor != null ? machineAnchor : transform;
         Vector3 scale = CardScale() * startScale;
         int[] created = new int[count];
+        int made = 0;
         for (int i = 0; i < count; i++)
         {
+            // uma carta por instanciamento: cada compra sai do baralho e nunca
+            // volta, entao nenhuma se repete
+            int value = TakeNextValue();
+            if (value <= 0)
+            {
+                if (logDeals)
+                {
+                    Debug.Log("CardDealer: baralho acabou. Faltou " + (count - made) + " carta(s) do lote.");
+                }
+                break;
+            }
+
             int target = ClampPlayer(pendingTargets[i]);
-            int roundIndex = pendingRounds[i];
             Transform anchor = handAnchors[target];
             int index = hand.Count;
             int slot = CountInHand(target);
@@ -355,12 +663,41 @@ public class CardDealer : MenSharpBehaviour
             hand.Add(card);
             handOf.Add(target);
             slotOf.Add(slot);
-            special.Add(roundIndex == specialCardIndex);
-            created[i] = index;
+cardValue.Add(value);
+
+            // slot == 0 e a primeira carta daquele jogador, e nao a primeira da mesa:
+            // na abertura alternada, a carta 1 e do jogador 0 e a carta 2 do jogador 1,
+            // e as duas sao especiais.
+            bool isSpecial = ShouldMarkSpecial(slot == 0);
+            special.Add(isSpecial);
+            if (isSpecial && hideSpecialCards && hiddenMaterial != null)
+            {
+                Renderer cardRenderer = card.GetComponent<Renderer>();
+                if (cardRenderer != null)
+                {
+                    cardRenderer.sharedMaterial = hiddenMaterial;
+                }
+            }
+            if (logDeals)
+            {
+                Debug.Log("CardDealer: carta " + value + " -> jogador " + target
+                    + " (casa " + slot + (isSpecial ? ", especial" : "") + "). Restam " + DeckRemaining + ".");
+            }
+            created[made] = index;
+            made++;
         }
         pendingTargets.Clear();
-        pendingRounds.Clear();
-        return created;
+        if (made == count)
+        {
+            return created;
+        }
+        // baralho acabou no meio do lote: devolve so o que deu
+        int[] trimmed = new int[made];
+        for (int i = 0; i < made; i++)
+        {
+            trimmed[i] = created[i];
+        }
+        return trimmed;
     }
 
     /// <summary>Fase 2: a carta vai da maquina ate a casa dela, interpolando.</summary>
@@ -503,6 +840,7 @@ public class CardDealer : MenSharpBehaviour
                 hand.RemoveAt(i);
                 handOf.RemoveAt(i);
                 slotOf.RemoveAt(i);
+                cardValue.RemoveAt(i);
                 special.RemoveAt(i);
             }
         }
