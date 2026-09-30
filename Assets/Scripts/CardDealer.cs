@@ -9,9 +9,14 @@ using VRC.Udon.Common.Interfaces;
 /// Compra as cartas da maquina e as entrega na mao dos jogadores.
 ///
 /// O fluxo tem duas fases: a carta primeiro nasce na maquina
-/// (<see cref="InstantiateBatch"/>) e so depois e interpolada ate a mao que
-/// lhe cabe (<see cref="FlyToHand"/>). Uma compra e sempre um lote: o lote
-/// inteiro nasce de uma vez e as cartas saem uma a uma.
+/// (<see cref="InstantiateFromEntry"/>) e so depois e interpolada ate a mao que
+/// lhe cabe (<see cref="FlyToHand"/>). Uma compra por vez, com uma pausa entre
+/// elas.
+///
+/// O dono do baralho e o unico que compra. Cada compra vira uma entrada no
+/// historico sincronizado, e as outras maquinas refazem a mesa a partir dele em
+/// <see cref="OnDeserialization"/>. O Udon nao instancia objeto em rede, entao a
+/// carta viaja como dado e cada maquina cria a sua visualizacao, no mesmo lugar.
 ///
 /// A mao de destino e um array, e o jogo alterna: a carta 0 vai para o
 /// jogador 0, a 1 para o 1, a 2 para o 0 de novo. Como cada mao guarda as
@@ -66,6 +71,10 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Semente do embaralhamento. E sincronizada, entao todo mundo monta a mesma ordem; o dono sorteia uma nova por rodada.")]
     [UdonSynced] public int deckSeed = 12345;
 
+    [Header("Network")]
+    [Tooltip("Quantas compras cabem no historico que vai pela rede. Uma rodada do Twenty One usa 11, entao sobram folga.")]
+    public int logCapacity = 32;
+
     [Tooltip("Embaralha o baralho antes de comecar a rodada.")]
     public bool shuffleDeck = true;
 
@@ -74,7 +83,7 @@ public class CardDealer : MenSharpBehaviour
 
     [Header("Turn")]
     [Tooltip("Quem pediu a jogada. So de quem e o turno, para a UI destacar a mao; a mao que recebe a carta e sempre a do parametro de Hit/Stay.")]
-    public int currentPlayer = 0;
+    [UdonSynced] public int currentPlayer = 0;
 
     [Tooltip("Jogador que vai pedir a jogada. Escreva aqui e chame Hit() ou Stay() sem parametro, que e o jeito de chamar evento no Udon.")]
     public int requestedPlayer = 0;
@@ -111,15 +120,12 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Escala da carta no inicio do voo, em fracao do tamanho final.")]
     public float startScale = 0.6f;
 
-    [Tooltip("Separacao com que o lote sai da maquina, antes de voar.")]
-    public float machineSpread = 0.06f;
-
     private List<GameObject> hand = new List<GameObject>();
     private List<int> handOf = new List<int>();
     private List<int> slotOf = new List<int>();
     private List<int> cardValue = new List<int>();
     private List<bool> special = new List<bool>();
-    private List<int> pendingTargets = new List<int>();
+    private List<int> pendingFly = new List<int>();
     private int[] deck = new int[0];
     private int dealIndex = 0;
     private uint randomState = 0;
@@ -128,6 +134,16 @@ public class CardDealer : MenSharpBehaviour
     private bool openingDealt = false;
     private bool dealing = false;
     private int flying = 0;
+
+    // Historico de compras da rodada. O dono escreve aqui e manda pela rede; os
+    // outros leem e refazem a mesa na mesma ordem. E o que mantem as tres
+    // maquinas com a mesma carta na mao, mesmo com o atraso de ida e volta da
+    // compra. O Udon nao instancia objeto em rede, entao a carta viaja como
+    // dado e cada maquina cria a sua visualizacao.
+    [UdonSynced] private int logCount = 0;
+    [UdonSynced] private int[] logValue;
+    [UdonSynced] private int[] logOwner;
+    private int logApplied = 0;
 
     /// <summary>Quantas cartas estao na mesa, somando as duas maos.</summary>
     public int CardCount
@@ -216,25 +232,112 @@ public class CardDealer : MenSharpBehaviour
     // ------------------------------------------------------------------ api
 
     /// <summary>
+    /// Quem manda no baralho. No editor e no single player nao ha dono de rede,
+    /// entao quem chama ja manda.
+    /// </summary>
+    private bool IsDeckOwner()
+    {
+        VRCPlayerApi local = Networking.LocalPlayer;
+        return local == null || Networking.IsOwner(local, gameObject);
+    }
+
+    /// <summary>
+    /// Cria os buffers do historico se ainda nao existirem. So o dono escreve
+    /// neles; nas outras maquinas eles ficam em zero, e tanto faz.
+    /// </summary>
+    private void EnsureLogBuffers()
+    {
+        if (logValue != null && logValue.Length == logCapacity)
+        {
+            return;
+        }
+        logValue = new int[logCapacity];
+        logOwner = new int[logCapacity];
+    }
+
+    /// <summary>
+    /// Refaz na mesa tudo que ainda nao foi aplicado. O dono ja aplicou na
+    /// hora, entao o cursor dele esta no fim e nao ha nada a fazer; nas outras
+    /// maquinas e aqui que as cartas aparecem.
+    /// </summary>
+    private void ApplyLog()
+    {
+        EnsureLogBuffers();
+        while (logApplied < logCount)
+        {
+            // uma entrada = uma carta consumida do baralho. O dono ja consomeu
+            // em OwnerDeal, entao aqui so mantenemos o contador em dia nas outras
+            // maquinas.
+            EnsureDeck();
+            TakeNextValue();
+            if (!InstantiateFromEntry(logApplied))
+            {
+                break;
+            }
+            logApplied++;
+        }
+        if (pendingFly.Count > 0)
+        {
+            StartDraining();
+        }
+    }
+
+    /// <summary>
+    /// Compra uma carta e escreve no historico. So o dono chama isto; a carta
+    /// sai para todo mundo por <see cref="OnDeserialization"/>, e nao por
+    /// instancia de objeto em rede, que o Udon nao faz.
+    /// </summary>
+    private bool OwnerDeal(int target)
+    {
+        EnsureDeck();
+        if (DeckEmpty)
+        {
+            if (logDeals)
+            {
+                Debug.Log("CardDealer: baralho acabou, o hit do jogador " + target + " foi ignorado.");
+            }
+            return false;
+        }
+        EnsureLogBuffers();
+        if (logCount >= logCapacity)
+        {
+            if (logDeals)
+            {
+                Debug.Log("CardDealer: historico cheio (" + logCapacity + "), a compra foi ignorada.");
+            }
+            return false;
+        }
+
+        logValue[logCount] = TakeNextValue();
+        logOwner[logCount] = target;
+        logCount++;
+
+        // o dono aplica na hora e ja fica com o cursor no fim
+        logApplied = logCount;
+        InstantiateFromEntry(logCount - 1);
+        RequestSerialization();
+        return true;
+    }
+
+    /// <summary>
     /// Abre a rodada. Quem nao tem o baralho so pede: quem tem sorteia a
-    /// semente nova, manda pela rede e <see cref="OnDeserialization"/> roda em
-    /// todas as maquinas, para as tres comprarem exatamente as mesmas cartas.
-    /// Offline (editor, single player) nao ha dono, entao segue direto.
+    /// semente nova, zera o historico e manda pela rede, e o historico de
+    /// compras que faz as tres maquinas comprarem as mesmas cartas, na mesma
+    /// ordem. Offline (editor, single player) nao ha dono, entao segue direto.
     /// </summary>
     public void StartRound()
     {
-        VRCPlayerApi local = Networking.LocalPlayer;
-        if (local != null && !Networking.IsOwner(local, gameObject))
+        if (!IsDeckOwner())
         {
             SendCustomNetworkEvent(NetworkEventTarget.Owner, "StartRound");
             return;
         }
 
         NewSeed();
-        if (local != null)
-        {
-            RequestSerialization();
-        }
+        EnsureLogBuffers();
+        logCount = 0;
+        logApplied = 0;
+        RequestSerialization();
         ApplySeed();
     }
 
@@ -355,14 +458,21 @@ public class CardDealer : MenSharpBehaviour
         DealOpeningHand();
     }
 
-    /// <summary>Chegou estado novo da rede: refaz o baralho se a semente mudou.</summary>
+    /// <summary>
+    /// Chegou estado novo da rede. Se a semente mudou, e rodada nova: limpa a
+    /// mesa e recomeca o cursor do historico. Depois aplica tudo que chegou,
+    /// que e o que faz a carta aparecer nas outras maquinas.
+    /// </summary>
     public void OnDeserialization()
     {
-        if (hasBuilt && lastBuiltSeed == deckSeed)
+        if (!hasBuilt || lastBuiltSeed != deckSeed)
         {
-            return;
+            logApplied = 0;
+            EnsureLogBuffers();
+            ClearHand();
+            EnsureDeck();
         }
-        ApplySeed();
+        ApplyLog();
     }
 
     /// <summary>
@@ -402,6 +512,11 @@ public class CardDealer : MenSharpBehaviour
         {
             return;
         }
+        if (!IsDeckOwner())
+        {
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, "DealOpeningHand");
+            return;
+        }
         if (!IsReady())
         {
             return;
@@ -422,9 +537,12 @@ public class CardDealer : MenSharpBehaviour
         for (int i = 0; i < wanted; i++)
         {
             // alterna: 0, 1, 0, 1...
-            QueueCard(i % hands);
+            OwnerDeal(i % hands);
         }
-        StartDraining();
+        if (pendingFly.Count > 0)
+        {
+            StartDraining();
+        }
     }
 
     /// <summary>
@@ -438,23 +556,41 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public void Hit(int playerIndex)
     {
+        int player = ClampPlayer(playerIndex);
+        if (!IsDeckOwner())
+        {
+            // evento de rede do Udon nao leva argumento, entao o pedido vai pelo
+            // nome do evento: Hit0 pede compra para a mao 0, Hit1 para a mao 1
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, player == 0 ? "Hit0" : "Hit1");
+            return;
+        }
         if (!IsReady())
         {
             return;
         }
-        int player = ClampPlayer(playerIndex);
-        EnsureDeck();
-        if (DeckEmpty)
-        {
-            if (logDeals)
-            {
-                Debug.Log("CardDealer: baralho acabou, o hit do jogador " + player + " foi ignorado.");
-            }
-            return;
-        }
         currentPlayer = player;
-        QueueCard(player);
-        StartDraining();
+        if (OwnerDeal(player) && pendingFly.Count > 0)
+        {
+            StartDraining();
+        }
+    }
+
+    /// <summary>Hit do jogador 0, pela rede. so o dono executa.</summary>
+    public void Hit0()
+    {
+        if (IsDeckOwner())
+        {
+            Hit(0);
+        }
+    }
+
+    /// <summary>Hit do jogador 1, pela rede. so o dono executa.</summary>
+    public void Hit1()
+    {
+        if (IsDeckOwner())
+        {
+            Hit(1);
+        }
     }
 
     /// <summary>Hit para <see cref="requestedPlayer"/>. Use este nos eventos Udon.</summary>
@@ -470,7 +606,32 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public void Stay(int playerIndex)
     {
-        currentPlayer = ClampPlayer(playerIndex);
+        int player = ClampPlayer(playerIndex);
+        if (!IsDeckOwner())
+        {
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, player == 0 ? "Stay0" : "Stay1");
+            return;
+        }
+        currentPlayer = player;
+        RequestSerialization();
+    }
+
+    /// <summary>Stay do jogador 0, pela rede. so o dono executa.</summary>
+    public void Stay0()
+    {
+        if (IsDeckOwner())
+        {
+            Stay(0);
+        }
+    }
+
+    /// <summary>Stay do jogador 1, pela rede. so o dono executa.</summary>
+    public void Stay1()
+    {
+        if (IsDeckOwner())
+        {
+            Stay(1);
+        }
     }
 
     /// <summary>Stay para <see cref="requestedPlayer"/>. Use este nos eventos Udon.</summary>
@@ -482,7 +643,7 @@ public class CardDealer : MenSharpBehaviour
     /// <summary>Some com todas as cartas da mesa e abre uma rodada nova.</summary>
     public void ClearHand()
     {
-        pendingTargets.Clear();
+        pendingFly.Clear();
         for (int i = 0; i < hand.Count; i++)
         {
             if (hand[i] != null)
@@ -507,6 +668,23 @@ public class CardDealer : MenSharpBehaviour
         if (last < 0)
         {
             return;
+        }
+        // o historico precisa perder a mesma carta, senao o dono voltaria a
+        // mandar um estado que ja nao existe na mesa dos outros
+        if (logCount > 0)
+        {
+            logCount--;
+            logValue[logCount] = 0;
+            logOwner[logCount] = 0;
+            if (logApplied > logCount)
+            {
+                logApplied = logCount;
+            }
+            if (dealIndex > 0)
+            {
+                dealIndex--;
+            }
+            RequestSerialization();
         }
         if (hand[last] != null)
         {
@@ -580,11 +758,6 @@ public class CardDealer : MenSharpBehaviour
 
     // -------------------------------------------------------------- dealing
 
-    private void QueueCard(int target)
-    {
-        pendingTargets.Add(target);
-    }
-
     private void StartDraining()
     {
         if (dealing)
@@ -599,20 +772,15 @@ public class CardDealer : MenSharpBehaviour
     {
         try
         {
-            while (pendingTargets.Count > 0)
+            while (pendingFly.Count > 0)
             {
-                // fase 1: o lote inteiro nasce na maquina
-                int count = pendingTargets.Count;
-                int[] created = InstantiateBatch(count);
-                // fase 2: uma a uma, cada carta voa para a mao que lhe cabe
-                for (int i = 0; i < created.Length; i++)
+                int cardIndex = pendingFly[0];
+                pendingFly.RemoveAt(0);
+                if (pendingFly.Count > 0 && delayBetweenCards > 0f)
                 {
-                    if (i > 0 && delayBetweenCards > 0f)
-                    {
-                        await Scheduler.Delay(delayBetweenCards);
-                    }
-                    await FlyToHand(created[i]);
+                    await Scheduler.Delay(delayBetweenCards);
                 }
+                await FlyToHand(cardIndex);
             }
         }
         finally
@@ -622,82 +790,69 @@ public class CardDealer : MenSharpBehaviour
         }
     }
 
-    /// <summary>Fase 1: cria as cartas do lote, todas ainda na maquina.</summary>
-    private int[] InstantiateBatch(int count)
+    /// <summary>
+    /// Cria a carta da entrada <paramref name="entry"/> do historico, ainda na
+    /// maquina, e a coloca na fila de voo. O valor vem do historico, e nao do
+    /// baralho local, para que todas as maquinas criem exatamente a mesma
+    /// carta.
+    ///
+    /// Nao consome o baralho: quem sorteia e o dono, em
+    /// <see cref="OwnerDeal"/>. Nos outros maquinas quem adianta o contador de
+    /// "restam N" e <see cref="ApplyLog"/>, uma vez por entrada.
+    /// </summary>
+    private bool InstantiateFromEntry(int entry)
     {
+        if (entry < 0 || entry >= logCount || logValue == null)
+        {
+            return false;
+        }
+        int value = logValue[entry];
+        if (value <= 0)
+        {
+            return false;
+        }
+
+        int target = ClampPlayer(logOwner[entry]);
+        Transform anchor = handAnchors[target];
+        int index = hand.Count;
+        int slot = CountInHand(target);
+        Quaternion toRotation = SlotRotation(slot);
+
         Transform machine = machineAnchor != null ? machineAnchor : transform;
-        Vector3 scale = CardScale() * startScale;
-        int[] created = new int[count];
-        int made = 0;
-        for (int i = 0; i < count; i++)
+        GameObject card = Instantiate(cardPrefab, anchor);
+        Transform cardTransform = card.transform;
+        cardTransform.localPosition = anchor.InverseTransformPoint(machine.position);
+        cardTransform.localRotation = toRotation * Quaternion.Euler(0f, flipAngle, 0f);
+        cardTransform.localScale = CardScale() * startScale;
+
+        // entra na mesa antes de voar, e a casa fica registrada agora: se a casa
+        // fosse recalculada no voo, as cartas do mesmo lote, que ja estariam
+        // todas na lista, cairiam todas na ultima casa
+        hand.Add(card);
+        handOf.Add(target);
+        slotOf.Add(slot);
+        cardValue.Add(value);
+
+        // slot == 0 e a primeira carta daquele jogador, e nao a primeira da mesa:
+        // na abertura alternada, a carta 1 e do jogador 0 e a carta 2 do jogador 1,
+        // e as duas sao especiais.
+        bool isSpecial = ShouldMarkSpecial(slot == 0);
+        special.Add(isSpecial);
+        if (isSpecial && hideSpecialCards && hiddenMaterial != null)
         {
-            // uma carta por instanciamento: cada compra sai do baralho e nunca
-            // volta, entao nenhuma se repete
-            int value = TakeNextValue();
-            if (value <= 0)
+            Renderer cardRenderer = card.GetComponent<Renderer>();
+            if (cardRenderer != null)
             {
-                if (logDeals)
-                {
-                    Debug.Log("CardDealer: baralho acabou. Faltou " + (count - made) + " carta(s) do lote.");
-                }
-                break;
+                cardRenderer.sharedMaterial = hiddenMaterial;
             }
-
-            int target = ClampPlayer(pendingTargets[i]);
-            Transform anchor = handAnchors[target];
-            int index = hand.Count;
-            int slot = CountInHand(target);
-            Vector3 to = SlotPosition(slot);
-            Quaternion toRotation = SlotRotation(slot);
-
-            GameObject card = Instantiate(cardPrefab, anchor);
-            Transform cardTransform = card.transform;
-            cardTransform.localPosition =
-                anchor.InverseTransformPoint(machine.position) + MachineSpread(i, count, anchor);
-            cardTransform.localRotation = toRotation * Quaternion.Euler(0f, flipAngle, 0f);
-            cardTransform.localScale = scale;
-
-            // entra na mesa antes de voar, e a casa fica registrada agora: se a
-            // casa fosse recalculada no voo, as cartas do mesmo lote — que ja
-            // estariam todas na lista — cairiam todas na ultima casa
-            hand.Add(card);
-            handOf.Add(target);
-            slotOf.Add(slot);
-cardValue.Add(value);
-
-            // slot == 0 e a primeira carta daquele jogador, e nao a primeira da mesa:
-            // na abertura alternada, a carta 1 e do jogador 0 e a carta 2 do jogador 1,
-            // e as duas sao especiais.
-            bool isSpecial = ShouldMarkSpecial(slot == 0);
-            special.Add(isSpecial);
-            if (isSpecial && hideSpecialCards && hiddenMaterial != null)
-            {
-                Renderer cardRenderer = card.GetComponent<Renderer>();
-                if (cardRenderer != null)
-                {
-                    cardRenderer.sharedMaterial = hiddenMaterial;
-                }
-            }
-            if (logDeals)
-            {
-                Debug.Log("CardDealer: carta " + value + " -> jogador " + target
-                    + " (casa " + slot + (isSpecial ? ", especial" : "") + "). Restam " + DeckRemaining + ".");
-            }
-            created[made] = index;
-            made++;
         }
-        pendingTargets.Clear();
-        if (made == count)
+        if (logDeals)
         {
-            return created;
+            Debug.Log("CardDealer: carta " + value + " -> jogador " + target
+                + " (casa " + slot + (isSpecial ? ", especial" : "") + "). Restam " + DeckRemaining + ".");
         }
-        // baralho acabou no meio do lote: devolve so o que deu
-        int[] trimmed = new int[made];
-        for (int i = 0; i < made; i++)
-        {
-            trimmed[i] = created[i];
-        }
-        return trimmed;
+        pendingFly.Add(index);
+        return true;
     }
 
     /// <summary>Fase 2: a carta vai da maquina ate a casa dela, interpolando.</summary>
@@ -810,18 +965,6 @@ cardValue.Add(value);
     private Vector3 CardScale()
     {
         return cardPrefab != null ? cardPrefab.transform.localScale : Vector3.one;
-    }
-
-    private Vector3 MachineSpread(int i, int count, Transform anchor)
-    {
-        if (count < 2 || machineSpread == 0f)
-        {
-            return Vector3.zero;
-        }
-        // o lote sai da maquina lado a lado, sempre na mesma ordem do mundo,
-        // mesmo com as duas maos viradas uma para a outra
-        Vector3 world = new Vector3((i - (count - 1) * 0.5f) * machineSpread, 0f, 0f);
-        return anchor.InverseTransformDirection(world);
     }
 
     private float EaseOutCubic(float t)
