@@ -1,152 +1,66 @@
-# Pendências do protótipo
+# Estado do protótipo Twenty One
 
-Lista do que ainda não está pronto, decidido ou implementado no Twenty One. Serve
-para não perder o que ficou pela metade e para deixar claro o que é bug e o que é
-falta de implementação.
+Conferido com `Assets/Docs/twenty-one-trump-cards.md` e com a cena
+`Assets/Scenes/Game.unity` em 30/09/2026. `mensharp.md` descreve o
+compilador usado pelos comportamentos de Udon.
 
-Status do código: `Assets/Scripts/CardDealer.cs`, `Assets/Scripts/PlayerSlot.cs` e
-`Assets/Scripts/OwnerOnlyVisibility.cs`, mais a cena `Assets/Scenes/Game.unity`.
+## Implementado e verificado no ClientSim
 
-## Bugs corrigidos nesta rodada
+- A partida espera dois jogadores e um pedido de início do dono do Slot 0.
+  `PlayerSlot` autentica as ações, e somente o dono do baralho altera o estado.
+- Cada rodada começa com seis cartas numéricas: uma primeira carta de face
+  oculta e duas cartas abertas por jogador. Os placeholders visuais estão
+  desativados na cena.
+- O baralho tem uma única carta de cada valor de 1 a 11. A semente e o histórico
+  das compras são sincronizados para reconstruir as mãos nos clientes.
+- Os ScoreCubes mostram a soma da mão (`total/alvo`). O texto do adversário é
+  escondido localmente por `OwnerOnlyVisibility`.
+- A altura das cartas é controlada por `cardWorldY` (padrão 1,0825 m) e
+  `layerThickness` (padrão 0), sem consultar o Card da cena em runtime.
+- Hit passa o turno e zera a sequência de passadas. Duas passadas seguidas
+  comparam as somas; quem estoura perde, e se os dois estourarem perde quem
+  tiver a soma maior. Empate não causa dano.
+- A vida começa em `startingLife`. A aposta da rodada é `roundDamage +
+  (roundNumber - 1) * roundDamageGrowth`, limitada a zero. A partida termina
+  quando uma vida chega a zero ou quando `maxRounds` é alcançado.
+- `turnTimeoutSeconds` permite derrota por tempo e fica em zero na cena até
+  existir a apresentação da carta de gancho. Quando habilitado, a contagem
+  começa após a distribuição animada e reinicia depois de uma jogada.
+- Limpeza de rodada interrompe animações antigas. Deserialização reconstrói
+  a mesa se o histórico for zerado ou a semente mudar.
 
-- **Contador de rodada parado.** `StartRound()` não incrementava `roundNumber`, e
-  `FinishRound()` chama `StartRound()` direto. Todo log dizia "rodada 1" e
-  `maxRounds > 1` nunca encerrava a partida. Agora `StartMatch()` zera
-  `roundNumber` e `StartRound()` incrementa, então a primeira rodada é a 1 e cada
-  `FinishRound()` avança uma.
-- **Só o dono do baralho conseguia iniciar.** Antes da primeira partida,
-  `IsMatchStarter()` exigia `slots[0].IsMine()`, mas a posse dos Slots só é
-  atribuída dentro de `StartMatch()`. Ou seja, antes de começar, todo Slot era do
-  master e um cliente não-master era sempre recusado. Agora, enquanto
-  `matchStarted` é falso, qualquer jogador pode pedir o início: quem executa
-  continua sendo o dono do baralho, que revalida tudo em `MatchCanStart()`.
+## Ainda necessário para jogar sem chamadas de teste
 
-## Pendências
+- Controles para iniciar, comprar e passar, indicador de turno, vida, rodada e
+  vencedor. O menu está fora do escopo atual, mas a interface durante a
+  partida ainda precisa ser ligada aos métodos `Request*`.
+- As 25 trumps descritas em `twenty-one-trump-cards.md` não têm mão própria,
+  distribuição, efeitos, objetos na mesa nem interface. `RequestUseTrump` é
+  ignorado deliberadamente e não consome a carta numérica oculta.
+- A carta de gancho do timeout requer visual e uma regra de remoção por
+  `Remove`/`Exchange`; por ora o timeout decide a rodada diretamente quando
+  habilitado.
+- A revelação da carta oculta ao fim da rodada ainda não foi definida. A
+  primeira carta de cada jogador permanece visualmente oculta até a limpeza.
+- Entrada ou saída de jogador durante a partida ainda não faz nova atribuição
+  dos Slots. A partida deve ser reiniciada com dois jogadores presentes.
+- Validação em duas instâncias reais do VRChat, incluindo um cliente que não é
+  dono do baralho e a reconstrução da mesa após entrar atrasado.
 
-### UI de jogo (C, H)
+## Decisões de adaptação pendentes
 
-Não existe um único botão nem um `Canvas` na cena. Hoje o protótipo só roda por
-chamada direta no Inspector ou por script de teste.
+- Vida e aposta iniciais: a cena usa 3 de vida, aposta 1 e crescimento 1.
+- Política de trumps não usadas, tamanho máximo da mão de trumps e chance de
+  receber uma trump depois de Hit.
+- Quando e para quem revelar a carta numérica oculta.
+- Como mostrar a derrota por tempo e sua interação futura com `Remove` e
+  `Exchange`.
 
-Falta, no mínimo:
+## Limitação do editor
 
-- Botão de **Iniciar partida**, ligado a `RequestStartMatch()`.
-- Botão de **Comprar** e **Passar** por jogador, ligados a `RequestHit()` e
-  `RequestStay()`. Como `RequestHit`/`RequestStay` já descobrem sozinhos o Slot do
-  jogador local, um par de botões compartilhado serve para os dois lados.
-- Destaque de de quem é a vez. `turnIndex` e `currentPlayer` já são sincronizados,
-  então é só leitura.
-- **Vida, número da rodada e vencedor.** `life`, `roundNumber` e `matchStarterPlayerId`
-  já são sincronizados, mas `RefreshScores()` escreve só `total/targetScore`. Não há
-  nada na tela mostrando quanta vida cada um tem, em que rodada está, nem quem
-  venceu a rodada.
-- Estado do botão: desabilitar Comprar/Passar quando não é a vez do jogador, e
-  quando a partida não começou.
-
-### Carta secreta nunca é revelada (E)
-
-`ApplyCardMaterial()` troca o material da primeira carta de cada mão para
-`hiddenMaterial` na compra, e nada reverte no fim da rodada. Hoje a carta fica
-virada a rodada inteira. `twenty-one-trump-cards.md` deixa a pergunta aberta
-("qual das duas cartas iniciais é a oculta e quando ela é revelada"), então é
-decisão de design, não bug.
-
-Decidir:
-
-- Se a oculta é a primeira carta de cada mão (é o que o código faz hoje) ou a
-  segunda.
-- Se revela no fim da rodada, e se revela para os dois ou só para o dono.
-- Se a carta revelada continua somando normalmente.
-
-### "Carta especial" e "trump" são coisas diferentes (F, B)
-
-Hoje o código usa um único conceito para os dois, e os nomes confundem:
-
-- `markFirstCardSpecial` marca a **carta secreta** da abertura como "especial".
-- `special` alimenta `IsSpecialCard()`, que `AcceptTrump()` consulta para decidir
-  se o jogador pode "usar" a carta.
-- Efeito disso: `RequestUseTrump(cardIndex)` na prática significa **queimar a sua
-  própria carta secreta**, o que não é a regra do original. No original as trumps
-  são 25 cartas de habilidade separadas, recebidas 2 por rodada.
-
-Falta:
-
-- Separar os dois conceitos no código e renomear (`IsSpecialCard` para algo como
-  `IsHiddenCard`, e um registro separado de trumps na mão).
-- Implementar `AcceptTrump()`: hoje ele só marca o uso em `trumpUsed` e tem o
-  comentário "o efeito da carta entra aqui". Nenhum dos 25 efeitos está escrito.
-- Distribuir as trumps: `trumpCardsPerRound` está declarado e nunca usado, e não
-  existe nenhuma carta de tarot na cena.
-- **Por isso a regra de "duas passadas" fica incompleta.** O original encerra a
-  rodada com duas passadas seguidas *sem nenhuma trump no meio* (ver
-  `twenty-one-trump-cards.md`). `AcceptTrump()` não zera `consecutiveStays`.
-  Enquanto não existir trump nenhuma no jogo isso é inofensivo, porque a condição
-  nunca é alcançada, mas precisa ser corrigido junto com a entrega das trumps.
-
-### Limpeza de código (G)
-
-Feito nesta rodada, sem mudança de comportamento:
-
-- `requestedPlayer` removido. O campo apontava no tooltip para `Hit()` e `Stay()`,
-  métodos que não existem mais desde a troca pelo `PlayerSlot`.
-- Bloco de documentação órfão antes de `AcceptHit()`, que descrevia o antigo
-  `Hit(int)` público removido.
-- Tooltip de `currentPlayer` reescrito: ele é espelho de `turnIndex` para a UI, e
-  não a fonte da verdade.
-
-Ainda para verificar depois:
-
-- `hideSpecialCards` tem tooltip dizendo "deixa desligado até o baralho de trumps
-  entrar", mas a cena está com ele ligado, porque agora ele é o que esconde a
-  carta secreta da abertura. As duas coisas se confundem no mesmo campo.
-- O doc da classe ainda descreve a rodada em termos de `openingCards` e
-  `RequestHit`/`RequestStay`; vale reler depois que a UI existir.
-- `trumpCardsPerRound` e `twoStaysEndRound` são configuráveis, mas o primeiro
-  nunca é lido e o segundo só funciona com duas mãos.
-
-## Regras do original ainda não implementadas
-
-Nada disto está no código; está em `twenty-one-trump-cards.md`.
-
-- **A aposta sobe a cada rodada.** Hoje o dano é fixo (`roundDamage`, padrão 1).
-  O original tem uma aposta crescente contra um contador, e é isso que dá a tensão
-  do jogo.
-- **Carta de gancho por timeout.** Se o jogador não comprar nem passar a tempo,
-  recebe uma carta que faz perder a rodada na hora.
-- **Refresh / Remove / Return / Exchange** e o resto das trumps de mão.
-- **Cartas de regra (Go For 17 / 24 / 27)** mudam o alvo da rodada, e o estouro
-  passa a valer para o novo alvo.
-- **Cartas de aposta (One-Up, Two-Up, Shield, Bless, Bloodshed)** mexem na aposta
-  e na vida.
-- **Trucks de controle (Destroy, Reincarnation, Friendship)** agem sobre as trumps
-  do oponente.
-- **Hush e Perfect Draw** existem como mecânica de carta oculta; hoje a carta
-  secreta é fixa na abertura, e não comprada por efeito.
-
-## Decisões de adaptação ainda em aberto
-
-As mesmas que `twenty-one-trump-cards.md` lista, mais as que apareceram agora:
-
-- Valor inicial do contador e da aposta na primeira rodada, e quanto a aposta sobe.
-- Qual das duas cartas iniciais é a oculta e quando ela é revelada.
-- Tamanho máximo da mão de trumps e o que acontece com trumps não usadas no fim
-  da rodada.
-- Chance exata de comprar uma trump junto com uma carta do baralho.
-- Se a revelação da carta oculta é só visual ou também muda a soma dos dois.
-
-## Risco de rede ainda não verificado
-
-O fluxo de dois jogadores foi testado no ClientSim com o dono do baralho e dois
-Slots. Não foi verificado em instância real:
-
-- Um cliente que não é o dono do baralho apertando Comprar/Passar.
-- Um cliente que não é o dono tentando Iniciar (é o que o bug do `IsMatchStarter`
-  corrigia; vale confirmar em rede real).
-- Jogador entrando ou saindo no meio da partida. Não há tratamento nenhum: os
-  Slots são atribuídos uma vez, em `AssignSlots()`, dentro de `StartMatch()`.
-  Se alguém sai, o Slot dele continua com a posse de um `playerId` que não existe
-  mais e o turno pode ficar preso esperando uma jogada que nunca vem.
-- O Baralho do dono sendo perdido ou sendo destruído.
-- Limite de `logCapacity` (32) numa rodada longa: o original tem 11 cartas no
-  baralho, mas trumps de mão (Refresh, Friendship) compram cartas do baralho de
-  novo e podem estourar o historico.
+O ClientSim exibiu uma `NullReferenceException` repetida no inspetor de
+variáveis Udon (`Packages/com.vrchat.worlds/.../UdonProgramAsset.cs`). Foi
+aplicada uma guarda de `SyncMetadataTable` nessa cópia local do pacote. O
+arquivo está ignorado pelo Git e uma atualização do SDK pode substituí-lo.
+Não foi observado erro equivalente no fluxo Hit/Stay do `CardDealer` após a
+correção local.

@@ -63,7 +63,7 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Material das cartas especiais. Vazio = nao troca nada.")]
     public Material hiddenMaterial;
 
-    [Tooltip("Esconde a face especial trocando o material. Deixa desligado ate o baralho de trumps entrar.")]
+    [Tooltip("Esconde a face da primeira carta numerica de cada jogador. A carta oculta nao e uma trump.")]
     public bool hideSpecialCards = false;
 
     [Header("Deck")]
@@ -136,6 +136,9 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Quanto de vida o perdedor da rodada perde.")]
     public int roundDamage = 1;
 
+    [Tooltip("Aumento da aposta a cada rodada. 1 segue a progressao descrita nas regras; 0 mantem o dano fixo.")]
+    public int roundDamageGrowth = 1;
+
     [Tooltip("Vida inicial de cada jogador. A partida acaba quando a vida de alguem chega a zero.")]
     public int startingLife = 3;
 
@@ -144,6 +147,9 @@ public class CardDealer : MenSharpBehaviour
 
     [Tooltip("Duas passadas seguidas encerram a rodada. E a regra do original.")]
     public bool twoStaysEndRound = true;
+
+    [Tooltip("Segundos para agir antes de perder por tempo. 0 desliga o timeout enquanto nao houver visual para a carta de gancho.")]
+    public float turnTimeoutSeconds = 0f;
 
     [Tooltip("Cartas de tarot que cada jogador recebe por rodada.")]
     public int trumpCardsPerRound = 2;
@@ -169,6 +175,7 @@ public class CardDealer : MenSharpBehaviour
     private bool openingDealt = false;
     private bool dealing = false;
     private int flying = 0;
+    private int dealGeneration = 0;
 
     // Historico de compras da rodada. O dono escreve aqui e manda pela rede; os
     // outros leem e refazem a mesa na mesma ordem. E o que mantem as tres
@@ -193,12 +200,13 @@ public class CardDealer : MenSharpBehaviour
     [UdonSynced] public int consecutiveStays = 0;
     [UdonSynced] public int[] life;
     [UdonSynced] public int[] trumpUsed;
+    [UdonSynced] public bool matchOver = false;
 
     // Ultima jogada processada de cada Slot. E o que impede a mesma intencao de
     // ser executada duas vezes, sem precisar limpar nada no Slot.
     private int[] slotSeqSeen = new int[0];
-    private bool matchOver = false;
     private int roundWinner = -1;
+    private float turnDeadline = 0f;
 
     /// <summary>Quantas cartas estao na mesa, somando as duas maos.</summary>
     public int CardCount
@@ -335,7 +343,8 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void EnsureLogBuffers()
     {
-        if (logValue != null && logValue.Length == logCapacity)
+        if (logValue != null && logOwner != null
+            && logValue.Length == logCapacity && logOwner.Length == logCapacity)
         {
             return;
         }
@@ -353,6 +362,11 @@ public class CardDealer : MenSharpBehaviour
         EnsureLogBuffers();
         while (logApplied < logCount)
         {
+            if (logValue[logApplied] <= 0)
+            {
+                Debug.LogWarning("CardDealer: entrada invalida no historico: " + logApplied + ".");
+                break;
+            }
             // uma entrada = uma carta consumida do baralho. O dono ja consomeu
             // em OwnerDeal, entao aqui so mantenemos o contador em dia nas outras
             // maquinas.
@@ -413,13 +427,8 @@ public class CardDealer : MenSharpBehaviour
     /// compras que faz as tres maquinas comprarem as mesmas cartas, na mesma
     /// ordem. Offline (editor, single player) nao ha dono, entao segue direto.
     /// </summary>
-    public void StartRound()
+    private void StartRound()
     {
-        if (!IsDeckOwner())
-        {
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, "StartRound");
-            return;
-        }
         if (!matchStarted || matchOver)
         {
             return;
@@ -447,6 +456,7 @@ public class CardDealer : MenSharpBehaviour
         }
         RequestSerialization();
         ApplySeed();
+        ResetTurnDeadline();
     }
 
     /// <summary>
@@ -459,13 +469,8 @@ public class CardDealer : MenSharpBehaviour
     /// jogador da mesa, e o dono do baralho guarda o id dele; todo mundo le o
     /// mesmo valor, entao os tres clientes concordam em quem started.
     /// </summary>
-    public void StartMatch()
+    private void StartMatch()
     {
-        if (!IsDeckOwner())
-        {
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, "StartMatch");
-            return;
-        }
         if (!MatchCanStart())
         {
             return;
@@ -516,24 +521,25 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public void RequestStartMatch()
     {
-        if (IsMatchStarter())
+        if (!IsMatchStarter())
         {
-            StartMatch();
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: pedido de iniciar partida recusado, so o dono do Slot 0 pode.");
+            }
+            return;
         }
-        else if (logTurns)
+        if (slots != null && slots.Length > 0 && slots[0] != null)
         {
-            Debug.Log("CardDealer: pedido de iniciar partida recusado, so quem started pode.");
+            slots[0].RequestStartMatch();
         }
     }
 
     /// <summary>
     /// Este jogador pode iniciar ou reiniciar a partida?
     ///
-    /// Antes da primeira jogada nao existe "quem started", entao ninguem fica de
-    /// fora: qualquer um pode pedir o inicio. Isso nao abre brecha, porque quem
-    /// executa e o dono do baralho e ele confere tudo de novo em
-    /// <see cref="MatchCanStart"/> — dois Slots configurados, dois jogadores
-    /// dentro. O pedido de um cliente so chega a um dono de Slot legitimo.
+    /// Antes da primeira jogada, o dono do Slot 0 pode iniciar. O pedido passa
+    /// pelo Slot, que autentica o jogador antes de o dono do baralho processar.
     ///
     /// Depois que a partida comeca, so quem started reinicia. Todo mundo le o
     /// mesmo <see cref="matchStarterPlayerId"/>, entao os tres clientes concordam
@@ -548,20 +554,36 @@ public class CardDealer : MenSharpBehaviour
         }
         if (!matchStarted)
         {
-            return true;
+            return slots != null && slots.Length > 0 && slots[0] != null && slots[0].IsMine();
         }
         return local.playerId == matchStarterPlayerId;
     }
 
     private bool MatchCanStart()
     {
-        if (slots == null || slots.Length < HandCount() || HandCount() < 2)
+        if (slots == null || slots.Length < HandCount() || HandCount() != 2)
         {
             if (logTurns)
             {
-                Debug.Log("CardDealer: nao da para comecar, configure um Slot por jogador.");
+                Debug.Log("CardDealer: configure exatamente duas maos e um Slot por jogador.");
             }
             return false;
+        }
+        int deckSize = Mathf.Abs(deckMaxValue - deckMinValue) + 1;
+        if (openingCards < HandCount() * 3 || openingCards > deckSize
+            || logCapacity < openingCards)
+        {
+            Debug.LogWarning("CardDealer: configure ao menos tres cartas por jogador na abertura, "
+                + "um baralho suficiente e logCapacity >= openingCards.");
+            return false;
+        }
+        for (int i = 0; i < HandCount(); i++)
+        {
+            if (slots[i] == null)
+            {
+                Debug.LogWarning("CardDealer: Slot " + i + " nao esta configurado.");
+                return false;
+            }
         }
         if (VRCPlayerApi.GetPlayerCount() < HandCount())
         {
@@ -752,10 +774,10 @@ public class CardDealer : MenSharpBehaviour
     /// compra a abertura. Todo mundo passa por este mesmo caminho, entao as
     /// tres maquinas veem a mesma rodada.
     ///
-    /// Publico porque e o mesmo caminho de quem entra atras: da para chamar
-    /// direto ao reconectar, sem esperar a rede mandar a semente de novo.
+    /// Clientes que chegam depois usam OnDeserialization para montar o estado
+    /// recebido, sem executar este metodo do dono do baralho.
     /// </summary>
-    public void ApplySeed()
+    private void ApplySeed()
     {
         hasBuilt = false;
         EnsureDeck();
@@ -770,11 +792,12 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public void OnDeserialization()
     {
-        if (!hasBuilt || lastBuiltSeed != deckSeed)
+        if (!hasBuilt || lastBuiltSeed != deckSeed || logApplied > logCount)
         {
             logApplied = 0;
             EnsureLogBuffers();
             ClearHand();
+            hasBuilt = false;
             EnsureDeck();
         }
         ApplyLog();
@@ -812,7 +835,7 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>Compra as cartas de abertura. So funciona uma vez por rodada.</summary>
-    public void DealOpeningHand()
+    private void DealOpeningHand()
     {
         if (!matchStarted)
         {
@@ -820,11 +843,6 @@ public class CardDealer : MenSharpBehaviour
         }
         if (openingDealt)
         {
-            return;
-        }
-        if (!IsDeckOwner())
-        {
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, "DealOpeningHand");
             return;
         }
         if (!IsReady())
@@ -868,13 +886,20 @@ public class CardDealer : MenSharpBehaviour
         {
             return;
         }
-        if (OwnerDeal(player) && pendingFly.Count > 0)
+        if (!OwnerDeal(player))
+        {
+            AcceptStay(player);
+            return;
+        }
+        consecutiveStays = 0;
+        if (pendingFly.Count > 0)
         {
             StartDraining();
         }
-        if (CheckBust(player))
+        if (logTurns && HandTotal(player) > targetScore)
         {
-            return;
+            Debug.Log("CardDealer: jogador " + player + " estourou com "
+                + HandTotal(player) + ". A rodada segue ate duas passadas para comparar os dois totais.");
         }
         AdvanceTurn(player);
     }
@@ -902,59 +927,16 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>
-    /// Carta de tarot so no turno de quem ela e. Uma vez usada, ela nao volta:
-    /// o dono do baralho guarda o uso em <c>trumpUsed</c>.
+    /// As trumps ainda nao foram implementadas. O pedido nao consome a carta
+    /// numerica secreta nem muda o estado da rodada.
     /// </summary>
     private void AcceptTrump(int player, int cardIndex)
     {
-        if (matchOver)
-        {
-            return;
-        }
-        if (cardIndex < 0 || cardIndex >= hand.Count)
-        {
-            if (logTurns)
-            {
-                Debug.Log("CardDealer: tarot recusada, a carta " + cardIndex + " nao existe na mesa.");
-            }
-            return;
-        }
-        if (handOf[cardIndex] != player)
-        {
-            if (logTurns)
-            {
-                Debug.Log("CardDealer: tarot recusada, a carta " + cardIndex + " nao e do jogador " + player + ".");
-            }
-            return;
-        }
-        if (!IsSpecialCard(cardIndex))
-        {
-            if (logTurns)
-            {
-                Debug.Log("CardDealer: tarot recusada, a carta " + cardIndex + " nao e de tarot.");
-            }
-            return;
-        }
-        EnsureTrumpUsed();
-        int word = player >> 5;
-        int bit = 1 << (player & 31);
-        if ((trumpUsed[word] & bit) != 0)
-        {
-            if (logTurns)
-            {
-                Debug.Log("CardDealer: tarot recusada, o jogador " + player + " ja usou a carta " + cardIndex + ".");
-            }
-            return;
-        }
-        trumpUsed[word] |= bit;
         if (logTurns)
         {
-            Debug.Log("CardDealer: jogador " + player + " usou a carta de tarot " + CardValue(cardIndex)
-                + " (carta " + cardIndex + " da mesa). Usar tarot nao conta como comprar nem passar.");
+            Debug.Log("CardDealer: trump ainda indisponivel; a carta " + cardIndex
+                + " nao foi consumida. A carta numerica secreta nao e uma trump.");
         }
-        // o efeito da carta entra aqui. O uso ja foi marcado acima, entao a
-        // mesma carta nao pode ser usada de novo mesmo depois que o efeito rodar.
-        RequestSerialization();
     }
 
     /// <summary>Passa a vez. So o dono do baralho chama, e so depois de uma jogada aceita.</summary>
@@ -965,25 +947,14 @@ public class CardDealer : MenSharpBehaviour
             turnIndex = (player + 1) % HandCount();
         }
         currentPlayer = turnIndex;
+        ResetTurnDeadline();
         RequestSerialization();
     }
 
-    /// <summary>Estourou o alvo? A rodada acaba e o outro jogador ganha.</summary>
-    private bool CheckBust(int player)
+    private void ResetTurnDeadline()
     {
-        int total = HandTotal(player);
-        if (total <= targetScore)
-        {
-            return false;
-        }
-        if (logTurns)
-        {
-            Debug.Log("CardDealer: jogador " + player + " estourou com " + total
-                + " (alvo " + targetScore + "), perde a rodada.");
-        }
-        consecutiveStays = 0;
-        FinishRound(1 - player);
-        return true;
+        turnDeadline = turnTimeoutSeconds > 0f && !dealing && pendingFly.Count == 0
+            ? Time.time + turnTimeoutSeconds : 0f;
     }
 
     /// <summary>Duas passadas seguidas: vence quem parou mais perto do alvo, sem estourar.</summary>
@@ -997,7 +968,7 @@ public class CardDealer : MenSharpBehaviour
         if (overA && overB)
         {
             // os dois estouraram: perde quem tiver o numero maior
-            winner = a > b ? 1 : 0;
+            winner = a == b ? -1 : (a > b ? 1 : 0);
         }
         else if (overA)
         {
@@ -1040,7 +1011,12 @@ public class CardDealer : MenSharpBehaviour
         else
         {
             int loser = 1 - winner;
-            life[loser] -= roundDamage;
+            int damage = roundDamage + (roundNumber - 1) * roundDamageGrowth;
+            if (damage < 0)
+            {
+                damage = 0;
+            }
+            life[loser] -= damage;
             if (life[loser] < 0)
             {
                 life[loser] = 0;
@@ -1048,7 +1024,7 @@ public class CardDealer : MenSharpBehaviour
             if (logTurns)
             {
                 Debug.Log("CardDealer: rodada " + roundNumber + " — jogador " + winner + " venceu, jogador "
-                    + loser + " perdeu " + roundDamage + " de vida (resta " + life[loser] + ").");
+                    + loser + " perdeu " + damage + " de vida (resta " + life[loser] + ").");
             }
         }
 
@@ -1079,6 +1055,8 @@ public class CardDealer : MenSharpBehaviour
     {
         matchOver = true;
         ClearHand();
+        logCount = 0;
+        logApplied = 0;
         if (logTurns)
         {
             Debug.Log("CardDealer: partida encerrada na rodada " + roundNumber
@@ -1196,9 +1174,26 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void ProcessSlots()
     {
-        if (!IsDeckOwner() || !matchStarted || matchOver)
+        if (!IsDeckOwner())
         {
             return;
+        }
+        if (matchStarted && !matchOver && turnTimeoutSeconds > 0f
+            && openingDealt && !dealing && pendingFly.Count == 0)
+        {
+            if (turnDeadline <= 0f)
+            {
+                ResetTurnDeadline();
+            }
+            else if (Time.time >= turnDeadline && !dealing)
+            {
+                if (logTurns)
+                {
+                    Debug.Log("CardDealer: jogador " + turnIndex + " perdeu a rodada por tempo.");
+                }
+                FinishRound(1 - turnIndex);
+                return;
+            }
         }
         if (slots == null || slots.Length == 0)
         {
@@ -1227,6 +1222,20 @@ public class CardDealer : MenSharpBehaviour
                 Debug.Log("CardDealer: jogador " + i + " jogou " + slot.ActionType
                     + " na vez " + turnIndex + ".");
             }
+            int type = slot.ActionType;
+            if (type == PlayerSlot.ActionStartMatch)
+            {
+                if (i == 0)
+                {
+                    StartMatch();
+                    return;
+                }
+                continue;
+            }
+            if (!matchStarted || matchOver)
+            {
+                continue;
+            }
             if (i != turnIndex)
             {
                 if (logTurns)
@@ -1236,7 +1245,6 @@ public class CardDealer : MenSharpBehaviour
                 }
                 continue;
             }
-            int type = slot.ActionType;
             int arg = slot.ActionArg;
             if (type == PlayerSlot.ActionHit)
             {
@@ -1254,8 +1262,12 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>Some com todas as cartas da mesa e abre uma rodada nova.</summary>
-    public void ClearHand()
+    private void ClearHand()
     {
+        // Invalida qualquer animacao suspensa de uma rodada anterior.
+        dealGeneration++;
+        dealing = false;
+        flying = 0;
         pendingFly.Clear();
         for (int i = 0; i < hand.Count; i++)
         {
@@ -1270,12 +1282,11 @@ public class CardDealer : MenSharpBehaviour
         cardValue.Clear();
         special.Clear();
         openingDealt = false;
-        currentPlayer = 0;
         RefreshScores();
     }
 
     /// <summary>Some com a ultima carta comprada e fecha o leque.</summary>
-    public void RemoveLastCard()
+    private void RemoveLastCard()
     {
         Prune();
         int last = hand.Count - 1;
@@ -1317,7 +1328,7 @@ public class CardDealer : MenSharpBehaviour
     /// Recalcula a casa de cada carta que ja pousou, sem animacao. As cartas em
     /// voo sao deixadas como estao: elas recebem a casa final ao aterrissar.
     /// </summary>
-    public void RepositionHand()
+    private void RepositionHand()
     {
         Prune();
         int settled = hand.Count - flying;
@@ -1348,10 +1359,8 @@ public class CardDealer : MenSharpBehaviour
     /// <paramref name="firstOfThatPlayer"/> e o que decide, e nao o numero: a
     /// marca viaja com a carta, nao com a casa nem com a ordem da mesa.
     ///
-    /// No jogo original uma das cartas da abertura e a oculta (Hush), que o
-    /// oponente nao pode ver. Hoje a compra e a mesma de qualquer outra carta;
-    /// o que falta e so o efeito — virar a carta para baixo e esconder o valor
-    /// dela do oponente — que entra junto com o baralho de trumps.
+    /// A face da primeira carta de cada mao usa hiddenMaterial quando
+    /// hideSpecialCards esta ligado. O valor continua participando da soma.
     /// </summary>
     private bool ShouldMarkSpecial(bool firstOfThatPlayer)
     {
@@ -1380,14 +1389,15 @@ public class CardDealer : MenSharpBehaviour
             return;
         }
         dealing = true;
-        Scheduler.Run(() => DrainQueue());
+        int generation = dealGeneration;
+        Scheduler.Run(() => DrainQueue(generation));
     }
 
-    private async Task DrainQueue()
+    private async Task DrainQueue(int generation)
     {
         try
         {
-            while (pendingFly.Count > 0)
+            while (generation == dealGeneration && pendingFly.Count > 0)
             {
                 int cardIndex = pendingFly[0];
                 pendingFly.RemoveAt(0);
@@ -1395,13 +1405,21 @@ public class CardDealer : MenSharpBehaviour
                 {
                     await Scheduler.Delay(delayBetweenCards);
                 }
-                await FlyToHand(cardIndex);
+                if (generation != dealGeneration)
+                {
+                    break;
+                }
+                await FlyToHand(cardIndex, generation);
             }
         }
         finally
         {
-            dealing = false;
-            flying = 0;
+            if (generation == dealGeneration)
+            {
+                dealing = false;
+                flying = 0;
+                ResetTurnDeadline();
+            }
         }
     }
 
@@ -1505,7 +1523,7 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>Fase 2: a carta vai da maquina ate a casa dela, interpolando.</summary>
-    private async Task FlyToHand(int cardIndex)
+    private async Task FlyToHand(int cardIndex, int generation)
     {
         if (cardIndex < 0 || cardIndex >= hand.Count)
         {
@@ -1529,7 +1547,7 @@ public class CardDealer : MenSharpBehaviour
         flying++;
         float duration = dealDuration > 0.01f ? dealDuration : 0.01f;
         float startedAt = Time.time;
-        while (card != null)
+        while (generation == dealGeneration && card != null)
         {
             float t = Mathf.Clamp01((Time.time - startedAt) / duration);
             float eased = EaseOutCubic(t);
@@ -1546,13 +1564,16 @@ public class CardDealer : MenSharpBehaviour
         }
 
         // garante a casa exata, independente do ultimo frame
-        if (card != null)
+        if (generation == dealGeneration && card != null)
         {
             card.transform.position = to;
             card.transform.localRotation = toRotation;
             card.transform.localScale = toScale;
         }
-        flying--;
+        if (generation == dealGeneration)
+        {
+            flying--;
+        }
     }
 
     // -------------------------------------------------------------- layout

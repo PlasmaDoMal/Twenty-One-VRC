@@ -44,6 +44,9 @@ public class PlayerSlot : MenSharpBehaviour
     /// <summary>Intencao: usar uma carta de tarot.</summary>
     public const int ActionTrump = 3;
 
+    /// <summary>Intencao de iniciar ou reiniciar a partida.</summary>
+    public const int ActionStartMatch = 4;
+
     [Tooltip("Qual posicao da mesa este Slot controla. O dono do baralho preenche em runtime, pela ordem de entrada dos jogadores.")]
     public int playerIndex = 0;
 
@@ -147,10 +150,15 @@ public class PlayerSlot : MenSharpBehaviour
         Send(ActionStay, 0);
     }
 
+    public void RequestStartMatch()
+    {
+        Send(ActionStartMatch, 0);
+    }
+
     /// <summary>
     /// Envia a intencao de usar a carta de tarot
-    /// <paramref name="cardIndex"/> (indice na mesa, como em
-    /// <see cref="CardDealer.IsSpecialCard"/>).
+    /// <paramref name="cardIndex"/>. A mao de trumps ainda nao foi
+    /// implementada; este pedido e ignorado pelo CardDealer.
     /// </summary>
     public void RequestUseTrump(int cardIndex)
     {
