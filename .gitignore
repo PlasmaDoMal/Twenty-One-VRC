@@ -88,3 +88,12 @@ $RECYCLE.BIN/
 # Saidas de verificacao visual durante o desenvolvimento, nao fazem parte do world.
 /[Aa]ssets/[Ss]creenshots/
 /[Aa]ssets/[Ss]creenshots.meta
+
+# --- Dados locais de teste do ClientSim ---
+# Estado das instancias simuladas na raiz do projeto. E re-criado a cada teste.
+/ClientSimStorage/
+
+# --- Configuracao local do VS Code ---
+# Gerada pelo proprio VS Code, e da preferences da maquina de quem comitou.
+.vscode/
+

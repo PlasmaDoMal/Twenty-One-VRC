@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using MenSharp;
 using UnityEngine;
 using VRC.SDKBase;
@@ -30,16 +31,31 @@ public class OwnerOnlyVisibility : MenSharpBehaviour
     public bool showWhenOffline = true;
 
     [Tooltip("Marca o estado ja aplicado, para nao mexer no renderer todo frame.")]
-    private bool applied;
+    public bool applied;
 
     [Tooltip("Ultimo valor aplicado em hideFromOthers.")]
-    private bool appliedValue;
+    public bool appliedValue;
 
     // quem entrou em qual vaga. O playerId muda a cada sessao, entao a vaga
     // e reconstruida por ordem de playerId, e nao guardada em campo sync.
-    private int[] slots = new int[2];
+    public int[] slots = new int[2];
 
-    private bool slotsDirty = true;
+    public bool slotsDirty = true;
+
+    public void Start()
+    {
+        ApplyVisibility();
+        Scheduler.Run(() => WatchVisibility());
+    }
+
+    private async Task WatchVisibility()
+    {
+        while (true)
+        {
+            ApplyVisibility();
+            await Scheduler.NextFrame();
+        }
+    }
 
     /// <summary>True quando o texto esta visivel para quem esta olhando.</summary>
     public bool IsVisibleToViewer
@@ -96,7 +112,7 @@ public class OwnerOnlyVisibility : MenSharpBehaviour
         slotsDirty = true;
     }
 
-    public void OnPreLateUpdate()
+    private void ApplyVisibility()
     {
         bool show = ShouldShow();
         if (applied && show == appliedValue)

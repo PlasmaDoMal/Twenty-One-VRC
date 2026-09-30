@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MenSharp;
+using TMPro;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon.Common.Interfaces;
@@ -25,10 +26,11 @@ using VRC.Udon.Common.Interfaces;
 /// sobrepoem ficam empilhadas uma sobre a outra.
 ///
 /// A rodada comeca com <see cref="openingCards"/> cartas (<see cref="StartRound"/>)
-/// e depois cada jogador compra uma por vez com <see cref="Hit"/> ou fica com
-/// o que tem com <see cref="Stay"/>. A mao que recebe o Hit e indicada no
-/// parametro do metodo: cada botao chama <see cref="Hit(int)"/> com o seu
-/// jogador, e o estado de <see cref="currentPlayer"/> e atualizado nessa hora.
+/// e depois cada jogador, na sua vez, compra uma carta com
+/// <see cref="RequestHit"/> ou fica com o que tem com <see cref="RequestStay"/>.
+/// Quem esta na vez e <see cref="turnIndex"/>, que o dono do baralho controla e
+/// ninguem consegue furar: a jogada chega pelo <see cref="PlayerSlot"/> do
+/// jogador, e so o dono de um Slot escreve nos campos dele.
 ///
 /// Tudo que e visual fica em campo publico: para trocar o visual da carta, o
 /// lugar de cada mao ou de onde a carta sai, basta arrastar outro objeto no
@@ -47,9 +49,12 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Centro da mao de cada jogador. As cartas viram filha da maa que lhes cabe.")]
     public Transform[] handAnchors;
 
+    [Tooltip("Textos dos ScoreCubes, na mesma ordem das maos: Player1 = 0, Player2 = 1.")]
+    public TMP_Text[] scoreTexts;
+
     [Header("Round")]
-    [Tooltip("Cartas compradas na abertura da rodada. So na primeira: depois e hit ou stay.")]
-    public int openingCards = 3;
+    [Tooltip("Cartas da abertura no total. Com dois jogadores, 6 da 1 secreta e 2 normais para cada um.")]
+    public int openingCards = 6;
 
     [Header("Special card")]
     [Tooltip("Marca como especial a primeira carta que cada jogador recebe na abertura. Como o baralho esta embaralhado, o numero delas tambem e sorteado.")]
@@ -82,11 +87,8 @@ public class CardDealer : MenSharpBehaviour
     public bool logDeals = true;
 
     [Header("Turn")]
-    [Tooltip("Quem pediu a jogada. So de quem e o turno, para a UI destacar a mao; a mao que recebe a carta e sempre a do parametro de Hit/Stay.")]
+    [Tooltip("De quem e a vez, espelhado de turnIndex para a UI destacar a mao. Nao e a fonte da verdade: quem decide o turno e turnIndex.")]
     [UdonSynced] public int currentPlayer = 0;
-
-    [Tooltip("Jogador que vai pedir a jogada. Escreva aqui e chame Hit() ou Stay() sem parametro, que e o jeito de chamar evento no Udon.")]
-    public int requestedPlayer = 0;
 
     [Header("Hand layout")]
     [Tooltip("Cartas por fileira antes de comecar a proxima.")]
@@ -98,8 +100,8 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Distancia entre fileiras, medida no comprimento da carta. 1 = uma fileira de cartao de distancia.")]
     public float rowGap = 1.2f;
 
-    [Tooltip("Altura de cada carta sobre a anterior, para nao haver z-fighting.")]
-    public float layerThickness = 0.002f;
+    [Tooltip("Altura adicional por carta, em metros no mundo. 0 = todas na mesma altura. Aumente apenas se houver sobreposicao.")]
+    public float layerThickness = 0f;
 
     [Tooltip("Abertura do leque, em graus por carta.")]
     public float fanAngle = 3f;
@@ -119,6 +121,39 @@ public class CardDealer : MenSharpBehaviour
 
     [Tooltip("Escala da carta no inicio do voo, em fracao do tamanho final.")]
     public float startScale = 0.6f;
+
+    [Header("Card look")]
+    [Tooltip("Material de cada carta, na ordem dos valores do baralho: o primeiro material e o deckMinValue, e assim por diante. A carta comprada recebe o material do proprio numero.")]
+    public Material[] cardMaterials;
+
+    [Tooltip("Altura Y no mundo para nascer e pousar. Baseada no Card da cena (1.0825), sem consultar esse objeto em runtime. O arco do voo e somado apenas durante a animacao.")]
+    public float cardWorldY = 1.0825f;
+
+    [Header("Round rules")]
+    [Tooltip("Alvo para ganhar a rodada. No original e 21.")]
+    public int targetScore = 21;
+
+    [Tooltip("Quanto de vida o perdedor da rodada perde.")]
+    public int roundDamage = 1;
+
+    [Tooltip("Vida inicial de cada jogador. A partida acaba quando a vida de alguem chega a zero.")]
+    public int startingLife = 3;
+
+    [Tooltip("Numero maximo de rodadas. 0 = sem limite, e a partida so acaba quando a vida de alguem zera.")]
+    public int maxRounds = 0;
+
+    [Tooltip("Duas passadas seguidas encerram a rodada. E a regra do original.")]
+    public bool twoStaysEndRound = true;
+
+    [Tooltip("Cartas de tarot que cada jogador recebe por rodada.")]
+    public int trumpCardsPerRound = 2;
+
+    [Header("Network")]
+    [Tooltip("Via de entrada de cada jogador na mesa. Dono do baralho preenche sozinho; e aqui que o turno e validado.")]
+    public PlayerSlot[] slots;
+
+    [Tooltip("Loga no console as jogadas aceitas e as recusadas por vez errada.")]
+    public bool logTurns = true;
 
     private List<GameObject> hand = new List<GameObject>();
     private List<int> handOf = new List<int>();
@@ -140,10 +175,30 @@ public class CardDealer : MenSharpBehaviour
     // maquinas com a mesma carta na mao, mesmo com o atraso de ida e volta da
     // compra. O Udon nao instancia objeto em rede, entao a carta viaja como
     // dado e cada maquina cria a sua visualizacao.
-    [UdonSynced] private int logCount = 0;
-    [UdonSynced] private int[] logValue;
-    [UdonSynced] private int[] logOwner;
+    //
+    // Publicos de proposito: no MenSharp um campo privado vira estatico
+    // compartilhado. Ha um CardDealer so na mesa, entao aqui nao mudaria nada,
+    // mas assim o campo nao vira armadilha se alguem colocar um segundo.
+    [UdonSynced] public int logCount = 0;
+    [UdonSynced] public int[] logValue;
+    [UdonSynced] public int[] logOwner;
     private int logApplied = 0;
+
+    // Estado da partida. Tudo synced, e so o dono do baralho escreve, entao os
+    // tres clientes veem a mesma vez, a mesma rodada e a mesma vida.
+    [UdonSynced] public int turnIndex = 0;
+    [UdonSynced] public bool matchStarted = false;
+    [UdonSynced] public int roundNumber = 1;
+    [UdonSynced] public int matchStarterPlayerId = 0;
+    [UdonSynced] public int consecutiveStays = 0;
+    [UdonSynced] public int[] life;
+    [UdonSynced] public int[] trumpUsed;
+
+    // Ultima jogada processada de cada Slot. E o que impede a mesma intencao de
+    // ser executada duas vezes, sem precisar limpar nada no Slot.
+    private int[] slotSeqSeen = new int[0];
+    private bool matchOver = false;
+    private int roundWinner = -1;
 
     /// <summary>Quantas cartas estao na mesa, somando as duas maos.</summary>
     public int CardCount
@@ -227,6 +282,39 @@ public class CardDealer : MenSharpBehaviour
             }
         }
         return sum;
+    }
+
+    public void Start()
+    {
+        RefreshScores();
+        Scheduler.Run(() => WatchSlots());
+    }
+
+    private async Task WatchSlots()
+    {
+        while (true)
+        {
+            ProcessSlots();
+            await Scheduler.NextFrame();
+        }
+    }
+
+    /// <summary>Atualiza cada placar a partir da mao reconstruida neste cliente.</summary>
+    public void RefreshScores()
+    {
+        if (scoreTexts == null)
+        {
+            return;
+        }
+        for (int i = 0; i < scoreTexts.Length; i++)
+        {
+            TMP_Text scoreText = scoreTexts[i];
+            if (scoreText != null)
+            {
+                int total = i < HandCount() ? HandTotal(i) : 0;
+                scoreText.text = total + "/" + targetScore;
+            }
+        }
     }
 
     // ------------------------------------------------------------------ api
@@ -332,14 +420,231 @@ public class CardDealer : MenSharpBehaviour
             SendCustomNetworkEvent(NetworkEventTarget.Owner, "StartRound");
             return;
         }
+        if (!matchStarted || matchOver)
+        {
+            return;
+        }
 
         NewSeed();
         EnsureLogBuffers();
         logCount = 0;
         logApplied = 0;
+        consecutiveStays = 0;
+        roundWinner = -1;
+        // a rodada contada em diante: StartMatch zera antes de chamar, e
+        // FinishRound chama este metodo no fim de cada rodada, entao o numero
+        // que aparece no log e sempre o da rodada que esta começando
+        roundNumber++;
+        turnIndex = 0;
+        currentPlayer = 0;
+        // a vez recomeca no primeiro Slot com jogador, para o turno nunca ficar
+        // preso num lugar vazio
+        int first = FirstOccupiedSlot();
+        if (first >= 0)
+        {
+            turnIndex = first;
+            currentPlayer = first;
+        }
         RequestSerialization();
         ApplySeed();
     }
+
+    /// <summary>
+    /// Comeca a partida. E o dono do baralho quem sorteia a semente e quem
+    /// guarda o estado inteiro, entao a semente nova vai pela rede como parte do
+    /// mesmo estado — nao ha segunda mensagem nem janela em que um cliente pode
+    /// montar um baralho diferente.
+    ///
+    /// So quem started a partida pode comecar de novo. Quem started e o primeiro
+    /// jogador da mesa, e o dono do baralho guarda o id dele; todo mundo le o
+    /// mesmo valor, entao os tres clientes concordam em quem started.
+    /// </summary>
+    public void StartMatch()
+    {
+        if (!IsDeckOwner())
+        {
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, "StartMatch");
+            return;
+        }
+        if (!MatchCanStart())
+        {
+            return;
+        }
+
+        AssignSlots();
+        if (slotSeqSeen == null || slotSeqSeen.Length != slots.Length)
+        {
+            slotSeqSeen = new int[slots.Length];
+        }
+        for (int i = 0; i < slots.Length; i++)
+        {
+            slotSeqSeen[i] = slots[i] != null ? slots[i].ActionSeq : 0;
+        }
+        VRCPlayerApi starter = FirstSlotPlayer();
+        if (starter != null)
+        {
+            matchStarterPlayerId = starter.playerId;
+        }
+        matchOver = false;
+        matchStarted = true;
+        // StartRound incrementa roundNumber, entao comeca em zero aqui para a
+        // primeira rodada ser a 1
+        roundNumber = 0;
+        roundWinner = -1;
+        EnsureLife();
+        for (int i = 0; i < life.Length; i++)
+        {
+            life[i] = startingLife;
+        }
+        EnsureTrumpUsed();
+        for (int i = 0; i < trumpUsed.Length; i++)
+        {
+            trumpUsed[i] = 0;
+        }
+        if (logTurns)
+        {
+            Debug.Log("CardDealer: partida comecada por " + matchStarterPlayerId
+                + ". Vida " + startingLife + ", dano " + roundDamage
+                + " por rodada, alvo " + targetScore + ".");
+        }
+        StartRound();
+    }
+
+    /// <summary>
+    /// A UI chama isto. So o jogador que started a partida consegue reiniciar,
+    /// e o dono do baralho confere isso de novo antes de obedecer.
+    /// </summary>
+    public void RequestStartMatch()
+    {
+        if (IsMatchStarter())
+        {
+            StartMatch();
+        }
+        else if (logTurns)
+        {
+            Debug.Log("CardDealer: pedido de iniciar partida recusado, so quem started pode.");
+        }
+    }
+
+    /// <summary>
+    /// Este jogador pode iniciar ou reiniciar a partida?
+    ///
+    /// Antes da primeira jogada nao existe "quem started", entao ninguem fica de
+    /// fora: qualquer um pode pedir o inicio. Isso nao abre brecha, porque quem
+    /// executa e o dono do baralho e ele confere tudo de novo em
+    /// <see cref="MatchCanStart"/> — dois Slots configurados, dois jogadores
+    /// dentro. O pedido de um cliente so chega a um dono de Slot legitimo.
+    ///
+    /// Depois que a partida comeca, so quem started reinicia. Todo mundo le o
+    /// mesmo <see cref="matchStarterPlayerId"/>, entao os tres clientes concordam
+    /// em quem started.
+    /// </summary>
+    public bool IsMatchStarter()
+    {
+        VRCPlayerApi local = Networking.LocalPlayer;
+        if (local == null)
+        {
+            return true;
+        }
+        if (!matchStarted)
+        {
+            return true;
+        }
+        return local.playerId == matchStarterPlayerId;
+    }
+
+    private bool MatchCanStart()
+    {
+        if (slots == null || slots.Length < HandCount() || HandCount() < 2)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: nao da para comecar, configure um Slot por jogador.");
+            }
+            return false;
+        }
+        if (VRCPlayerApi.GetPlayerCount() < HandCount())
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: aguardando os dois jogadores para iniciar a partida.");
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>Primeiro Slot com jogador na mesa, ou -1.</summary>
+    private int FirstOccupiedSlot()
+    {
+        if (slots == null)
+        {
+            return -1;
+        }
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] != null && slots[i].HasPlayer())
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private VRCPlayerApi FirstSlotPlayer()
+    {
+        int index = FirstOccupiedSlot();
+        if (index < 0)
+        {
+            return null;
+        }
+        return slots[index].OwnerPlayer();
+    }
+
+    /// <summary>
+    /// Da a mesa ao primeiro jogador que entrou, o segundo, e assim por diante,
+    /// Define a posicao de cada Slot e passa a posse dele para o jogador. E o
+    /// que amarra a mao 0 a um jogador especifico: sem isso o primeiro botao a
+    /// apertar seria o dono.
+    /// </summary>
+    private void AssignSlots()
+    {
+        if (slots == null)
+        {
+            return;
+        }
+        // GetPlayers segue a ordem de entrada, que e a ordem da mesa
+        VRCPlayerApi[] online = VRCPlayerApi.GetPlayers();
+        VRCPlayerApi[] players = new VRCPlayerApi[slots.Length];
+        int count = 0;
+        for (int i = 0; i < online.Length && count < slots.Length; i++)
+        {
+            if (online[i] != null)
+            {
+                players[count] = online[i];
+                count++;
+            }
+        }
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] == null)
+            {
+                continue;
+            }
+            if (i >= count)
+            {
+                slots[i].Assign(i, "");
+                continue;
+            }
+            slots[i].GiveOwnershipTo(players[i]);
+            slots[i].Assign(i, players[i].displayName);
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: Slot " + i + " e de " + players[i].displayName + ".");
+            }
+        }
+    }
+
 
     /// <summary>
     /// Monta o baralho da rodada: uma carta de cada numero entre
@@ -473,6 +778,7 @@ public class CardDealer : MenSharpBehaviour
             EnsureDeck();
         }
         ApplyLog();
+        RefreshScores();
     }
 
     /// <summary>
@@ -508,6 +814,10 @@ public class CardDealer : MenSharpBehaviour
     /// <summary>Compra as cartas de abertura. So funciona uma vez por rodada.</summary>
     public void DealOpeningHand()
     {
+        if (!matchStarted)
+        {
+            return;
+        }
         if (openingDealt)
         {
             return;
@@ -546,98 +856,401 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>
-    /// O jogador <paramref name="playerIndex"/> compra uma carta da maquina.
-    /// E o "hit".
+    /// Compra uma carta da maquina para a mao de quem esta na vez.
     ///
-    /// Quem compra e quem o chamador disser, nao o revezamento interno: o
-    /// jogador da vez e decidido por quem receber o botao, e registrado aqui
-    /// na hora da chamada. Assim o mesmo botao dos dois lados do baralho serve
-    /// para as duas maos, e o jogo nao precisa adivinhar de quem e a vez.
+    /// Quem compra e o <see cref="turnIndex"/>, nunca o indice que o chamador
+    /// disser: o dono do baralho decide a mao, olhando o proprio estado. E o
+    /// Slot que garante que a jogada veio mesmo daquele jogador.
     /// </summary>
-    public void Hit(int playerIndex)
+    private void AcceptHit(int player)
     {
-        int player = ClampPlayer(playerIndex);
-        if (!IsDeckOwner())
-        {
-            // evento de rede do Udon nao leva argumento, entao o pedido vai pelo
-            // nome do evento: Hit0 pede compra para a mao 0, Hit1 para a mao 1
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, player == 0 ? "Hit0" : "Hit1");
-            return;
-        }
-        if (!IsReady())
+        if (!matchStarted || matchOver || !IsReady())
         {
             return;
         }
-        currentPlayer = player;
         if (OwnerDeal(player) && pendingFly.Count > 0)
         {
             StartDraining();
         }
-    }
-
-    /// <summary>Hit do jogador 0, pela rede. so o dono executa.</summary>
-    public void Hit0()
-    {
-        if (IsDeckOwner())
+        if (CheckBust(player))
         {
-            Hit(0);
+            return;
         }
+        AdvanceTurn(player);
     }
 
-    /// <summary>Hit do jogador 1, pela rede. so o dono executa.</summary>
-    public void Hit1()
+    /// <summary>Fica com o que tem. So conta como rodada se vierem duas seguidas.</summary>
+    private void AcceptStay(int player)
     {
-        if (IsDeckOwner())
+        if (matchOver)
         {
-            Hit(1);
-        }
-    }
-
-    /// <summary>Hit para <see cref="requestedPlayer"/>. Use este nos eventos Udon.</summary>
-    public void Hit()
-    {
-        Hit(requestedPlayer);
-    }
-
-    /// <summary>
-    /// O jogador <paramref name="playerIndex"/> fica com o que tem, sem comprar
-    /// nada. E o "stay". Registra a jogada da mesma forma que o
-    /// <see cref="Hit(int)"/>, para a UI e para o placar saberem de quem foi.
-    /// </summary>
-    public void Stay(int playerIndex)
-    {
-        int player = ClampPlayer(playerIndex);
-        if (!IsDeckOwner())
-        {
-            SendCustomNetworkEvent(NetworkEventTarget.Owner, player == 0 ? "Stay0" : "Stay1");
             return;
         }
         currentPlayer = player;
+        consecutiveStays++;
+        if (logTurns)
+        {
+            Debug.Log("CardDealer: jogador " + player + " passou ("
+                + consecutiveStays + " seguida(s)). Total " + HandTotal(player) + ".");
+        }
+        if (twoStaysEndRound && consecutiveStays >= 2)
+        {
+            EndRoundByStays();
+            return;
+        }
+        AdvanceTurn(player);
+    }
+
+    /// <summary>
+    /// Carta de tarot so no turno de quem ela e. Uma vez usada, ela nao volta:
+    /// o dono do baralho guarda o uso em <c>trumpUsed</c>.
+    /// </summary>
+    private void AcceptTrump(int player, int cardIndex)
+    {
+        if (matchOver)
+        {
+            return;
+        }
+        if (cardIndex < 0 || cardIndex >= hand.Count)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: tarot recusada, a carta " + cardIndex + " nao existe na mesa.");
+            }
+            return;
+        }
+        if (handOf[cardIndex] != player)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: tarot recusada, a carta " + cardIndex + " nao e do jogador " + player + ".");
+            }
+            return;
+        }
+        if (!IsSpecialCard(cardIndex))
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: tarot recusada, a carta " + cardIndex + " nao e de tarot.");
+            }
+            return;
+        }
+        EnsureTrumpUsed();
+        int word = player >> 5;
+        int bit = 1 << (player & 31);
+        if ((trumpUsed[word] & bit) != 0)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: tarot recusada, o jogador " + player + " ja usou a carta " + cardIndex + ".");
+            }
+            return;
+        }
+        trumpUsed[word] |= bit;
+        if (logTurns)
+        {
+            Debug.Log("CardDealer: jogador " + player + " usou a carta de tarot " + CardValue(cardIndex)
+                + " (carta " + cardIndex + " da mesa). Usar tarot nao conta como comprar nem passar.");
+        }
+        // o efeito da carta entra aqui. O uso ja foi marcado acima, entao a
+        // mesma carta nao pode ser usada de novo mesmo depois que o efeito rodar.
         RequestSerialization();
     }
 
-    /// <summary>Stay do jogador 0, pela rede. so o dono executa.</summary>
-    public void Stay0()
+    /// <summary>Passa a vez. So o dono do baralho chama, e so depois de uma jogada aceita.</summary>
+    private void AdvanceTurn(int player)
     {
-        if (IsDeckOwner())
+        if (HandCount() > 0)
         {
-            Stay(0);
+            turnIndex = (player + 1) % HandCount();
+        }
+        currentPlayer = turnIndex;
+        RequestSerialization();
+    }
+
+    /// <summary>Estourou o alvo? A rodada acaba e o outro jogador ganha.</summary>
+    private bool CheckBust(int player)
+    {
+        int total = HandTotal(player);
+        if (total <= targetScore)
+        {
+            return false;
+        }
+        if (logTurns)
+        {
+            Debug.Log("CardDealer: jogador " + player + " estourou com " + total
+                + " (alvo " + targetScore + "), perde a rodada.");
+        }
+        consecutiveStays = 0;
+        FinishRound(1 - player);
+        return true;
+    }
+
+    /// <summary>Duas passadas seguidas: vence quem parou mais perto do alvo, sem estourar.</summary>
+    private void EndRoundByStays()
+    {
+        int a = HandTotal(0);
+        int b = HandTotal(1);
+        bool overA = a > targetScore;
+        bool overB = b > targetScore;
+        int winner;
+        if (overA && overB)
+        {
+            // os dois estouraram: perde quem tiver o numero maior
+            winner = a > b ? 1 : 0;
+        }
+        else if (overA)
+        {
+            winner = 1;
+        }
+        else if (overB)
+        {
+            winner = 0;
+        }
+        else
+        {
+            winner = a == b ? -1 : (a > b ? 0 : 1);
+        }
+        if (logTurns)
+        {
+            Debug.Log("CardDealer: rodada encerrada por duas passadas. "
+                + a + " x " + b + " (alvo " + targetScore + ")."
+                + (winner < 0 ? " Empatou." : " Venceu o jogador " + winner + "."));
+        }
+        FinishRound(winner);
+    }
+
+    /// <summary>
+    /// Fecha a rodada, aplica o dano no perdedor e ve se a partida acabou. Com
+    /// <c>winner</c> menor que zero a rodada empatou e ninguem toma dano.
+    /// </summary>
+    private void FinishRound(int winner)
+    {
+        roundWinner = winner;
+        consecutiveStays = 0;
+        EnsureLife();
+
+        if (winner < 0)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: rodada " + roundNumber + " empatada, ninguem levou dano.");
+            }
+        }
+        else
+        {
+            int loser = 1 - winner;
+            life[loser] -= roundDamage;
+            if (life[loser] < 0)
+            {
+                life[loser] = 0;
+            }
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: rodada " + roundNumber + " — jogador " + winner + " venceu, jogador "
+                    + loser + " perdeu " + roundDamage + " de vida (resta " + life[loser] + ").");
+            }
+        }
+
+        RequestSerialization();
+        if (MatchFinished())
+        {
+            EndMatch(winner);
+            return;
+        }
+        StartRound();
+    }
+
+    /// <summary>A partida acabou por vida ou por limite de rodadas?</summary>
+    private bool MatchFinished()
+    {
+        EnsureLife();
+        for (int i = 0; i < life.Length; i++)
+        {
+            if (life[i] <= 0)
+            {
+                return true;
+            }
+        }
+        return maxRounds > 0 && roundNumber >= maxRounds;
+    }
+
+    private void EndMatch(int winner)
+    {
+        matchOver = true;
+        ClearHand();
+        if (logTurns)
+        {
+            Debug.Log("CardDealer: partida encerrada na rodada " + roundNumber
+                + (winner < 0 ? ", empate." : ", venceu o jogador " + winner + "."));
+        }
+        RequestSerialization();
+    }
+
+    private void EnsureLife()
+    {
+        int hands = HandCount();
+        if (life == null || life.Length != hands)
+        {
+            life = new int[hands];
+            for (int i = 0; i < hands; i++)
+            {
+                life[i] = startingLife;
+            }
         }
     }
 
-    /// <summary>Stay do jogador 1, pela rede. so o dono executa.</summary>
-    public void Stay1()
+    private void EnsureTrumpUsed()
     {
-        if (IsDeckOwner())
+        int hands = HandCount();
+        int words = (hands + 31) / 32;
+        if (words < 1)
         {
-            Stay(1);
+            words = 1;
+        }
+        if (trumpUsed == null || trumpUsed.Length != words)
+        {
+            trumpUsed = new int[words];
         }
     }
 
-    /// <summary>Stay para <see cref="requestedPlayer"/>. Use este nos eventos Udon.</summary>
-    public void Stay()
+    /// <summary>
+    /// API para a UI. Cada botao chama estes daqui; nao ha parametro de jogador
+    /// porque o dono do baralho ja sabe de quem e a vez.
+    /// </summary>
+    public void RequestHit()
     {
-        Stay(requestedPlayer);
+        if (!matchStarted)
+        {
+            return;
+        }
+        int index = MySlotIndex();
+        if (index < 0)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: hit pedido sem Slot do jogador local.");
+            }
+            return;
+        }
+        slots[index].RequestHit();
+    }
+
+    public void RequestStay()
+    {
+        if (!matchStarted)
+        {
+            return;
+        }
+        int index = MySlotIndex();
+        if (index < 0)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: stay pedido sem Slot do jogador local.");
+            }
+            return;
+        }
+        slots[index].RequestStay();
+    }
+
+    /// <summary>
+    /// Usa a carta de tarot <paramref name="cardIndex"/>. O dono do baralho
+    /// recusa se nao for a vez de quem jogou.
+    /// </summary>
+    public void RequestUseTrump(int cardIndex)
+    {
+        int index = MySlotIndex();
+        if (index < 0)
+        {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: tarot pedida sem Slot do jogador local.");
+            }
+            return;
+        }
+        slots[index].RequestUseTrump(cardIndex);
+    }
+
+    /// <summary>Qual Slot e o do jogador local.</summary>
+    private int MySlotIndex()
+    {
+        if (slots == null)
+        {
+            return -1;
+        }
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (slots[i] != null && slots[i].IsMine())
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// O dono do baralho le os Slots a cada quadro. Como so o dono de um Slot
+    /// escreve nos campos dele, a jogada e autenticada pelo proprio objeto, e o
+    /// numero de sequencia faz cada uma valer uma vez so.
+    /// </summary>
+    private void ProcessSlots()
+    {
+        if (!IsDeckOwner() || !matchStarted || matchOver)
+        {
+            return;
+        }
+        if (slots == null || slots.Length == 0)
+        {
+            return;
+        }
+        if (slotSeqSeen == null || slotSeqSeen.Length != slots.Length)
+        {
+            slotSeqSeen = new int[slots.Length];
+        }
+        for (int i = 0; i < slots.Length; i++)
+        {
+            PlayerSlot slot = slots[i];
+            if (slot == null || !slot.HasPlayer())
+            {
+                continue;
+            }
+            if (slot.ActionSeq == slotSeqSeen[i])
+            {
+                continue;
+            }
+            // a jogada e do dono deste Slot, por construcao: ele e quem pode ter
+            // escrito no campo sincronizado
+            slotSeqSeen[i] = slot.ActionSeq;
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: jogador " + i + " jogou " + slot.ActionType
+                    + " na vez " + turnIndex + ".");
+            }
+            if (i != turnIndex)
+            {
+                if (logTurns)
+                {
+                    Debug.Log("CardDealer: jogada do jogador " + i
+                        + " recusada, a vez e do jogador " + turnIndex + ".");
+                }
+                continue;
+            }
+            int type = slot.ActionType;
+            int arg = slot.ActionArg;
+            if (type == PlayerSlot.ActionHit)
+            {
+                AcceptHit(i);
+            }
+            else if (type == PlayerSlot.ActionStay)
+            {
+                AcceptStay(i);
+            }
+            else if (type == PlayerSlot.ActionTrump)
+            {
+                AcceptTrump(i, arg);
+            }
+        }
     }
 
     /// <summary>Some com todas as cartas da mesa e abre uma rodada nova.</summary>
@@ -658,6 +1271,7 @@ public class CardDealer : MenSharpBehaviour
         special.Clear();
         openingDealt = false;
         currentPlayer = 0;
+        RefreshScores();
     }
 
     /// <summary>Some com a ultima carta comprada e fecha o leque.</summary>
@@ -696,6 +1310,7 @@ public class CardDealer : MenSharpBehaviour
         cardValue.RemoveAt(last);
         special.RemoveAt(last);
         RepositionHand();
+        RefreshScores();
     }
 
     /// <summary>
@@ -719,7 +1334,7 @@ public class CardDealer : MenSharpBehaviour
                 continue;
             }
             int slot = slotOf[i];
-            card.transform.localPosition = SlotPosition(slot);
+            card.transform.localPosition = SlotPosition(slot, card.transform.parent);
             card.transform.localRotation = SlotRotation(slot);
             card.transform.localScale = scale;
         }
@@ -821,7 +1436,9 @@ public class CardDealer : MenSharpBehaviour
         Transform machine = machineAnchor != null ? machineAnchor : transform;
         GameObject card = Instantiate(cardPrefab, anchor);
         Transform cardTransform = card.transform;
-        cardTransform.localPosition = anchor.InverseTransformPoint(machine.position);
+        Vector3 spawnPosition = machine.position;
+        spawnPosition.y = cardWorldY;
+        cardTransform.position = spawnPosition;
         cardTransform.localRotation = toRotation * Quaternion.Euler(0f, flipAngle, 0f);
         cardTransform.localScale = CardScale() * startScale;
 
@@ -832,20 +1449,14 @@ public class CardDealer : MenSharpBehaviour
         handOf.Add(target);
         slotOf.Add(slot);
         cardValue.Add(value);
+        RefreshScores();
 
         // slot == 0 e a primeira carta daquele jogador, e nao a primeira da mesa:
         // na abertura alternada, a carta 1 e do jogador 0 e a carta 2 do jogador 1,
         // e as duas sao especiais.
         bool isSpecial = ShouldMarkSpecial(slot == 0);
         special.Add(isSpecial);
-        if (isSpecial && hideSpecialCards && hiddenMaterial != null)
-        {
-            Renderer cardRenderer = card.GetComponent<Renderer>();
-            if (cardRenderer != null)
-            {
-                cardRenderer.sharedMaterial = hiddenMaterial;
-            }
-        }
+        ApplyCardMaterial(card, value, isSpecial);
         if (logDeals)
         {
             Debug.Log("CardDealer: carta " + value + " -> jogador " + target
@@ -853,6 +1464,44 @@ public class CardDealer : MenSharpBehaviour
         }
         pendingFly.Add(index);
         return true;
+    }
+
+    /// <summary>
+    /// Escolhe o material da carta pelo numero que ela tem: o material do valor
+    /// <paramref name="value"/> fica na posicao <c>value - deckMinValue</c> de
+    /// <see cref="cardMaterials"/>. Uma carta de tarot oculta, se
+    /// <see cref="hideSpecialCards"/> estiver ligado, troca esse material pelo
+    /// <see cref="hiddenMaterial"/>.
+    ///
+    /// O Renderer e procurado em profundidade porque o mesh do prefab fica num
+    /// filho, e nao no objeto raiz da carta.
+    /// </summary>
+    private void ApplyCardMaterial(GameObject card, int value, bool isSpecial)
+    {
+        Renderer cardRenderer = card.GetComponentInChildren<Renderer>(true);
+        if (cardRenderer == null)
+        {
+            return;
+        }
+        if (isSpecial && hideSpecialCards && hiddenMaterial != null)
+        {
+            cardRenderer.sharedMaterial = hiddenMaterial;
+            return;
+        }
+        if (cardMaterials == null || cardMaterials.Length == 0)
+        {
+            return;
+        }
+        int slotMaterial = value - deckMinValue;
+        if (slotMaterial < 0 || slotMaterial >= cardMaterials.Length)
+        {
+            return;
+        }
+        Material material = cardMaterials[slotMaterial];
+        if (material != null)
+        {
+            cardRenderer.sharedMaterial = material;
+        }
     }
 
     /// <summary>Fase 2: a carta vai da maquina ate a casa dela, interpolando.</summary>
@@ -869,10 +1518,11 @@ public class CardDealer : MenSharpBehaviour
         }
 
         int slot = slotOf[cardIndex];
-        Vector3 from = card.transform.localPosition;
+        Vector3 from = card.transform.position;
         Quaternion fromRotation = card.transform.localRotation;
         Vector3 fromScale = card.transform.localScale;
-        Vector3 to = SlotPosition(slot);
+        Transform anchor = card.transform.parent;
+        Vector3 to = anchor.TransformPoint(SlotPosition(slot, anchor));
         Quaternion toRotation = SlotRotation(slot);
         Vector3 toScale = CardScale();
 
@@ -884,7 +1534,7 @@ public class CardDealer : MenSharpBehaviour
             float t = Mathf.Clamp01((Time.time - startedAt) / duration);
             float eased = EaseOutCubic(t);
             Transform cardTransform = card.transform;
-            cardTransform.localPosition =
+            cardTransform.position =
                 Vector3.Lerp(from, to, eased) + Vector3.up * (Mathf.Sin(eased * Mathf.PI) * arcHeight);
             cardTransform.localRotation = Quaternion.Slerp(fromRotation, toRotation, eased);
             cardTransform.localScale = Vector3.Lerp(fromScale, toScale, eased);
@@ -898,7 +1548,7 @@ public class CardDealer : MenSharpBehaviour
         // garante a casa exata, independente do ultimo frame
         if (card != null)
         {
-            card.transform.localPosition = to;
+            card.transform.position = to;
             card.transform.localRotation = toRotation;
             card.transform.localScale = toScale;
         }
@@ -923,16 +1573,19 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>Casa <paramref name="slot"/> da mao, no espaco local do anchor.</summary>
-    private Vector3 SlotPosition(int slot)
+    private Vector3 SlotPosition(int slot, Transform anchor)
     {
         int perRow = RowSize();
         int column = slot % perRow;
         int row = slot / perRow;
         Vector3 card = CardScale();
-        return new Vector3(
+        Vector3 local = new Vector3(
             (column - (perRow - 1) * 0.5f) * card.x * cardGap,
-            slot * layerThickness,
+            0f,
             row * card.z * rowGap);
+        Vector3 world = anchor.TransformPoint(local);
+        world.y = cardWorldY + slot * layerThickness;
+        return anchor.InverseTransformPoint(world);
     }
 
     /// <summary>O leque abre e fecha por fileira, e nao pelo total da mao.</summary>
@@ -987,6 +1640,7 @@ public class CardDealer : MenSharpBehaviour
                 special.RemoveAt(i);
             }
         }
+        RefreshScores();
     }
 
     private bool IsReady()
