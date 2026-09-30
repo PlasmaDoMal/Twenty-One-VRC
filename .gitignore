@@ -83,3 +83,8 @@ $RECYCLE.BIN/
 # --- Unity Collaborate (obsoleto) ---
 /[Uu]nity[Ll]ockfile
 /[Uu]nity[Ss]tate/
+
+# --- Capturas de tela do editor ---
+# Saidas de verificacao visual durante o desenvolvimento, nao fazem parte do world.
+/[Aa]ssets/[Ss]creenshots/
+/[Aa]ssets/[Ss]creenshots.meta
