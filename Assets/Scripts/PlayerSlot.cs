@@ -156,9 +156,8 @@ public class PlayerSlot : MenSharpBehaviour
     }
 
     /// <summary>
-    /// Envia a intencao de usar a carta de tarot
-    /// <paramref name="cardIndex"/>. A mao de trumps ainda nao foi
-    /// implementada; este pedido e ignorado pelo CardDealer.
+    /// Envia a intencao de usar a trump na posicao
+    /// <paramref name="cardIndex"/> da propria mao (comecando em zero).
     /// </summary>
     public void RequestUseTrump(int cardIndex)
     {

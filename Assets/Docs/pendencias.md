@@ -20,26 +20,36 @@ compilador usado pelos comportamentos de Udon.
 - Hit passa o turno e zera a sequência de passadas. Duas passadas seguidas
   comparam as somas; quem estoura perde, e se os dois estourarem perde quem
   tiver a soma maior. Empate não causa dano.
-- A vida começa em `startingLife`. A aposta da rodada é `roundDamage +
-  (roundNumber - 1) * roundDamageGrowth`, limitada a zero. A partida termina
-  quando uma vida chega a zero ou quando `maxRounds` é alcançado.
-- `turnTimeoutSeconds` permite derrota por tempo e fica em zero na cena até
-  existir a apresentação da carta de gancho. Quando habilitado, a contagem
-  começa após a distribuição animada e reinicia depois de uma jogada.
+- A vida começa em `startingLife`. A aposta base começa em `roundDamage`, sobe
+  por `roundDamageGrowth` e pode ser alterada pelas trumps da mesa. Bless pode
+  salvar o perdedor e reduzir a aposta base seguinte. A partida termina por
+  vida zerada ou por `maxRounds`.
+- `turnTimeoutSeconds` cria um gancho lógico, que prevalece sobre a soma e pode
+  ser removido por Remove ou Exchange. Fica em zero na cena até existir o visual.
+  Quando habilitado, a contagem começa após a distribuição animada.
 - Limpeza de rodada interrompe animações antigas. Deserialização reconstrói
-  a mesa se o histórico for zerado ou a semente mudar.
+  a mesa se o histórico for alterado, zerado ou a semente mudar.
+- As 25 trumps descritas em `twenty-one-trump-cards.md` têm IDs, mão própria,
+  compra, uso e efeitos em `CardDealer.cs`. Há duas por jogador no início da
+  rodada. A chance de ganhar outra após Hit é configurável; Disservice não a
+  concede. Trumps colocadas na mesa ficam sincronizadas até serem destruídas
+  ou até a rodada acabar. Testes no ClientSim cobriram distribuição, Go For,
+  Destroy, Remove, Hush, Exchange, Refresh e uma carta numérica específica.
 
 ## Ainda necessário para jogar sem chamadas de teste
 
 - Controles para iniciar, comprar e passar, indicador de turno, vida, rodada e
   vencedor. O menu está fora do escopo atual, mas a interface durante a
   partida ainda precisa ser ligada aos métodos `Request*`.
-- As 25 trumps descritas em `twenty-one-trump-cards.md` não têm mão própria,
-  distribuição, efeitos, objetos na mesa nem interface. `RequestUseTrump` é
-  ignorado deliberadamente e não consome a carta numérica oculta.
-- A carta de gancho do timeout requer visual e uma regra de remoção por
-  `Remove`/`Exchange`; por ora o timeout decide a rodada diretamente quando
-  habilitado.
+- **Visual das tarot cards:** criar um modelo/prefab único, com uma textura ou
+  material para cada um dos 25 tipos, como foi feito para as cartas numéricas.
+  Posicionar as cartas da mão e as trumps contínuas na mesa, e ligar esses
+  objetos aos arrays sincronizados `trumpType`, `trumpOwner`, `tableTrumpType`
+  e `tableTrumpOwner`. O código de regras não instancia trumps visuais ainda.
+- Controles da mão de trumps: selecionar uma carta e chamar
+  `RequestUseTrump(indiceNaMinhaMao)`. `TrumpCountInHand`, `TrumpAt` e
+  `TrumpName` fornecem os dados sem depender do visual.
+- Visual da carta de gancho para o timeout.
 - A revelação da carta oculta ao fim da rodada ainda não foi definida. A
   primeira carta de cada jogador permanece visualmente oculta até a limpeza.
 - Entrada ou saída de jogador durante a partida ainda não faz nova atribuição
@@ -50,8 +60,9 @@ compilador usado pelos comportamentos de Udon.
 ## Decisões de adaptação pendentes
 
 - Vida e aposta iniciais: a cena usa 3 de vida, aposta 1 e crescimento 1.
-- Política de trumps não usadas, tamanho máximo da mão de trumps e chance de
-  receber uma trump depois de Hit.
+- Valores atuais configuráveis: trumps não usadas são descartadas a cada
+  rodada (`clearTrumpsEachRound`), máximo de 8 na mão e 20% de chance de
+  ganhar uma após Hit. Confirmar se esses padrões devem mudar.
 - Quando e para quem revelar a carta numérica oculta.
 - Como mostrar a derrota por tempo e sua interação futura com `Remove` e
   `Exchange`.

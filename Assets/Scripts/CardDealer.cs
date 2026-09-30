@@ -39,6 +39,15 @@ using VRC.Udon.Common.Interfaces;
 [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
 public class CardDealer : MenSharpBehaviour
 {
+    // IDs estaveis para UI e rede. 1..6 representam as cartas numericas 2..7.
+    public const int TrumpGo17 = 7, TrumpGo24 = 8, TrumpGo27 = 9;
+    public const int TrumpOneUp = 10, TrumpTwoUp = 11, TrumpShield = 12;
+    public const int TrumpShieldPlus = 13, TrumpBless = 14, TrumpBloodshed = 15;
+    public const int TrumpDestroy = 16, TrumpReincarnation = 17, TrumpFriendship = 18;
+    public const int TrumpHush = 19, TrumpPerfectDraw = 20, TrumpRemove = 21;
+    public const int TrumpReturn = 22, TrumpExchange = 23, TrumpDisservice = 24;
+    public const int TrumpRefresh = 25;
+
     [Header("References")]
     [Tooltip("Prefab instanciado a cada carta.")]
     public GameObject cardPrefab;
@@ -154,6 +163,18 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Cartas de tarot que cada jogador recebe por rodada.")]
     public int trumpCardsPerRound = 2;
 
+    [Tooltip("Numero maximo de trumps na mao de cada jogador.")]
+    public int maxTrumpsPerPlayer = 8;
+
+    [Tooltip("Chance percentual de ganhar uma trump ao comprar com Hit. Nao vale para Disservice.")]
+    public int bonusTrumpChancePercent = 20;
+
+    [Tooltip("Limpa as trumps nao usadas no inicio de cada rodada.")]
+    public bool clearTrumpsEachRound = true;
+
+    [Tooltip("Capacidade do historico de trumps colocadas na mesa.")]
+    public int tableTrumpCapacity = 32;
+
     [Header("Network")]
     [Tooltip("Via de entrada de cada jogador na mesa. Dono do baralho preenche sozinho; e aqui que o turno e validado.")]
     public PlayerSlot[] slots;
@@ -189,7 +210,22 @@ public class CardDealer : MenSharpBehaviour
     [UdonSynced] public int logCount = 0;
     [UdonSynced] public int[] logValue;
     [UdonSynced] public int[] logOwner;
+    [UdonSynced] public int[] logActive;
+    [UdonSynced] public int[] logHidden;
+    [UdonSynced] public int logStructureRevision = 0;
     private int logApplied = 0;
+    private int lastStructureRevision = 0;
+
+    // Trumps sao dados, sem prefab por enquanto. A UI futura le os tipos por
+    // TrumpAt e usa RequestUseTrump com o indice na propria mao.
+    [UdonSynced] public int[] trumpType;
+    [UdonSynced] public int[] trumpOwner;
+    [UdonSynced] public int trumpCount = 0;
+    [UdonSynced] public int[] tableTrumpType;
+    [UdonSynced] public int[] tableTrumpOwner;
+    [UdonSynced] public int tableTrumpCount = 0;
+    [UdonSynced] public int baseBet = 1;
+    [UdonSynced] public int hookMask = 0;
 
     // Estado da partida. Tudo synced, e so o dono do baralho escreve, entao os
     // tres clientes veem a mesma vez, a mesma rodada e a mesma vida.
@@ -199,7 +235,6 @@ public class CardDealer : MenSharpBehaviour
     [UdonSynced] public int matchStarterPlayerId = 0;
     [UdonSynced] public int consecutiveStays = 0;
     [UdonSynced] public int[] life;
-    [UdonSynced] public int[] trumpUsed;
     [UdonSynced] public bool matchOver = false;
 
     // Ultima jogada processada de cada Slot. E o que impede a mesma intencao de
@@ -320,7 +355,7 @@ public class CardDealer : MenSharpBehaviour
             if (scoreText != null)
             {
                 int total = i < HandCount() ? HandTotal(i) : 0;
-                scoreText.text = total + "/" + targetScore;
+                scoreText.text = total + "/" + EffectiveTarget();
             }
         }
     }
@@ -343,13 +378,16 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void EnsureLogBuffers()
     {
-        if (logValue != null && logOwner != null
-            && logValue.Length == logCapacity && logOwner.Length == logCapacity)
+        if (logValue != null && logOwner != null && logActive != null && logHidden != null
+            && logValue.Length == logCapacity && logOwner.Length == logCapacity
+            && logActive.Length == logCapacity && logHidden.Length == logCapacity)
         {
             return;
         }
         logValue = new int[logCapacity];
         logOwner = new int[logCapacity];
+        logActive = new int[logCapacity];
+        logHidden = new int[logCapacity];
     }
 
     /// <summary>
@@ -367,16 +405,23 @@ public class CardDealer : MenSharpBehaviour
                 Debug.LogWarning("CardDealer: entrada invalida no historico: " + logApplied + ".");
                 break;
             }
-            // uma entrada = uma carta consumida do baralho. O dono ja consomeu
-            // em OwnerDeal, entao aqui so mantenemos o contador em dia nas outras
-            // maquinas.
-            EnsureDeck();
-            TakeNextValue();
-            if (!InstantiateFromEntry(logApplied))
+            // Espelha tambem a troca feita por cartas numericas de tarot. Isso
+            // mantem as cartas restantes iguais se a posse do baralho mudar.
+            if (!TakeLoggedValue(logValue[logApplied]))
+            {
+                Debug.LogWarning("CardDealer: valor repetido ou ausente no historico: "
+                    + logValue[logApplied] + ".");
+                break;
+            }
+            if (logActive[logApplied] != 0 && !InstantiateFromEntry(logApplied, true))
             {
                 break;
             }
             logApplied++;
+        }
+        if (matchStarted && !matchOver && logApplied >= openingCards)
+        {
+            openingDealt = true;
         }
         if (pendingFly.Count > 0)
         {
@@ -389,7 +434,7 @@ public class CardDealer : MenSharpBehaviour
     /// sai para todo mundo por <see cref="OnDeserialization"/>, e nao por
     /// instancia de objeto em rede, que o Udon nao faz.
     /// </summary>
-    private bool OwnerDeal(int target)
+    private bool OwnerDeal(int target, bool hidden)
     {
         EnsureDeck();
         if (DeckEmpty)
@@ -412,13 +457,31 @@ public class CardDealer : MenSharpBehaviour
 
         logValue[logCount] = TakeNextValue();
         logOwner[logCount] = target;
+        logActive[logCount] = 1;
+        logHidden[logCount] = hidden ? 1 : 0;
         logCount++;
 
         // o dono aplica na hora e ja fica com o cursor no fim
         logApplied = logCount;
-        InstantiateFromEntry(logCount - 1);
+        InstantiateFromEntry(logCount - 1, true);
         RequestSerialization();
         return true;
+    }
+
+    private bool OwnerDealNumber(int target, int number, bool hidden)
+    {
+        EnsureDeck();
+        for (int i = dealIndex; i < deck.Length; i++)
+        {
+            if (deck[i] == number)
+            {
+                int swap = deck[dealIndex];
+                deck[dealIndex] = deck[i];
+                deck[i] = swap;
+                return OwnerDeal(target, hidden);
+            }
+        }
+        return false;
     }
 
     /// <summary>
@@ -438,7 +501,16 @@ public class CardDealer : MenSharpBehaviour
         EnsureLogBuffers();
         logCount = 0;
         logApplied = 0;
+        logStructureRevision++;
+        lastStructureRevision = logStructureRevision;
         consecutiveStays = 0;
+        hookMask = 0;
+        tableTrumpCount = 0;
+        EnsureTrumpBuffers();
+        if (clearTrumpsEachRound)
+        {
+            trumpCount = 0;
+        }
         roundWinner = -1;
         // a rodada contada em diante: StartMatch zera antes de chamar, e
         // FinishRound chama este metodo no fim de cada rodada, entao o numero
@@ -456,6 +528,12 @@ public class CardDealer : MenSharpBehaviour
         }
         RequestSerialization();
         ApplySeed();
+        for (int i = 0; i < trumpCardsPerRound; i++)
+        {
+            DrawTrump(0);
+            DrawTrump(1);
+        }
+        RequestSerialization();
         ResetTurnDeadline();
     }
 
@@ -501,16 +579,14 @@ public class CardDealer : MenSharpBehaviour
         {
             life[i] = startingLife;
         }
-        EnsureTrumpUsed();
-        for (int i = 0; i < trumpUsed.Length; i++)
-        {
-            trumpUsed[i] = 0;
-        }
+        EnsureTrumpBuffers();
+        trumpCount = 0;
+        baseBet = roundDamage;
         if (logTurns)
         {
             Debug.Log("CardDealer: partida comecada por " + matchStarterPlayerId
-                + ". Vida " + startingLife + ", dano " + roundDamage
-                + " por rodada, alvo " + targetScore + ".");
+                + ". Vida " + startingLife + ", aposta inicial " + roundDamage
+                + ", alvo " + targetScore + ".");
         }
         StartRound();
     }
@@ -561,6 +637,10 @@ public class CardDealer : MenSharpBehaviour
 
     private bool MatchCanStart()
     {
+        if (!IsReady())
+        {
+            return false;
+        }
         if (slots == null || slots.Length < HandCount() || HandCount() != 2)
         {
             if (logTurns)
@@ -571,10 +651,11 @@ public class CardDealer : MenSharpBehaviour
         }
         int deckSize = Mathf.Abs(deckMaxValue - deckMinValue) + 1;
         if (openingCards < HandCount() * 3 || openingCards > deckSize
-            || logCapacity < openingCards)
+            || logCapacity < deckSize || maxTrumpsPerPlayer < trumpCardsPerRound
+            || maxTrumpsPerPlayer < 1 || trumpCardsPerRound < 0
+            || tableTrumpCapacity < 1)
         {
-            Debug.LogWarning("CardDealer: configure ao menos tres cartas por jogador na abertura, "
-                + "um baralho suficiente e logCapacity >= openingCards.");
+            Debug.LogWarning("CardDealer: confira abertura, baralho, historico e capacidade das trumps.");
             return false;
         }
         for (int i = 0; i < HandCount(); i++)
@@ -792,16 +873,52 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public void OnDeserialization()
     {
-        if (!hasBuilt || lastBuiltSeed != deckSeed || logApplied > logCount)
+        bool newDeck = !hasBuilt || lastBuiltSeed != deckSeed;
+        if (newDeck || lastStructureRevision != logStructureRevision || logApplied > logCount)
         {
-            logApplied = 0;
-            EnsureLogBuffers();
-            ClearHand();
-            hasBuilt = false;
-            EnsureDeck();
+            RebuildFromLog();
         }
-        ApplyLog();
+        else
+        {
+            ApplyLog();
+        }
         RefreshScores();
+    }
+
+    private void RebuildFromLog()
+    {
+        EnsureLogBuffers();
+        ClearHand();
+        hasBuilt = false;
+        EnsureDeck();
+        int rebuilt = 0;
+        for (int i = 0; i < logCount && i < logCapacity; i++)
+        {
+            if (!TakeLoggedValue(logValue[i]))
+            {
+                Debug.LogWarning("CardDealer: nao foi possivel reconstruir o baralho na entrada " + i + ".");
+                break;
+            }
+            if (logActive[i] != 0 && logValue[i] > 0)
+            {
+                InstantiateFromEntry(i, false);
+            }
+            rebuilt++;
+        }
+        logApplied = rebuilt;
+        if (rebuilt == logCount)
+        {
+            lastStructureRevision = logStructureRevision;
+        }
+        openingDealt = matchStarted && !matchOver && logCount >= openingCards;
+        RefreshScores();
+    }
+
+    private void StructureChanged()
+    {
+        logStructureRevision++;
+        RebuildFromLog();
+        RequestSerialization();
     }
 
     /// <summary>
@@ -818,6 +935,21 @@ public class CardDealer : MenSharpBehaviour
         int value = deck[dealIndex];
         dealIndex++;
         return value;
+    }
+
+    private bool TakeLoggedValue(int value)
+    {
+        EnsureDeck();
+        for (int i = dealIndex; i < deck.Length; i++)
+        {
+            if (deck[i] != value) continue;
+            int swap = deck[dealIndex];
+            deck[dealIndex] = deck[i];
+            deck[i] = swap;
+            TakeNextValue();
+            return true;
+        }
+        return false;
     }
 
     private string DeckString()
@@ -865,7 +997,8 @@ public class CardDealer : MenSharpBehaviour
         for (int i = 0; i < wanted; i++)
         {
             // alterna: 0, 1, 0, 1...
-            OwnerDeal(i % hands);
+            int target = i % hands;
+            OwnerDeal(target, ShouldMarkSpecial(i < hands));
         }
         if (pendingFly.Count > 0)
         {
@@ -886,17 +1019,22 @@ public class CardDealer : MenSharpBehaviour
         {
             return;
         }
-        if (!OwnerDeal(player))
+        if (!OwnerDeal(player, false))
         {
             AcceptStay(player);
             return;
         }
         consecutiveStays = 0;
+        if (bonusTrumpChancePercent > 0
+            && Random.Range(0, 100) < bonusTrumpChancePercent)
+        {
+            DrawTrump(player);
+        }
         if (pendingFly.Count > 0)
         {
             StartDraining();
         }
-        if (logTurns && HandTotal(player) > targetScore)
+        if (logTurns && HandTotal(player) > EffectiveTarget())
         {
             Debug.Log("CardDealer: jogador " + player + " estourou com "
                 + HandTotal(player) + ". A rodada segue ate duas passadas para comparar os dois totais.");
@@ -926,17 +1064,289 @@ public class CardDealer : MenSharpBehaviour
         AdvanceTurn(player);
     }
 
-    /// <summary>
-    /// As trumps ainda nao foram implementadas. O pedido nao consome a carta
-    /// numerica secreta nem muda o estado da rodada.
-    /// </summary>
-    private void AcceptTrump(int player, int cardIndex)
+    public int TrumpCountInHand(int player)
     {
-        if (logTurns)
+        int count = 0;
+        for (int i = 0; i < trumpCount; i++)
         {
-            Debug.Log("CardDealer: trump ainda indisponivel; a carta " + cardIndex
-                + " nao foi consumida. A carta numerica secreta nao e uma trump.");
+            if (trumpOwner[i] == player)
+            {
+                count++;
+            }
         }
+        return count;
+    }
+
+    public int TrumpAt(int player, int handIndex)
+    {
+        int seen = 0;
+        for (int i = 0; i < trumpCount; i++)
+        {
+            if (trumpOwner[i] != player)
+            {
+                continue;
+            }
+            if (seen == handIndex)
+            {
+                return trumpType[i];
+            }
+            seen++;
+        }
+        return 0;
+    }
+
+    public string TrumpName(int type)
+    {
+        if (type >= 1 && type <= 6) return (type + 1) + "-Card";
+        if (type == TrumpGo17) return "Go For 17";
+        if (type == TrumpGo24) return "Go For 24";
+        if (type == TrumpGo27) return "Go For 27";
+        if (type == TrumpOneUp) return "One-Up";
+        if (type == TrumpTwoUp) return "Two-Up";
+        if (type == TrumpShield) return "Shield";
+        if (type == TrumpShieldPlus) return "Shield+";
+        if (type == TrumpBless) return "Bless";
+        if (type == TrumpBloodshed) return "Bloodshed";
+        if (type == TrumpDestroy) return "Destroy";
+        if (type == TrumpReincarnation) return "Reincarnation";
+        if (type == TrumpFriendship) return "Friendship";
+        if (type == TrumpHush) return "Hush";
+        if (type == TrumpPerfectDraw) return "Perfect Draw";
+        if (type == TrumpRemove) return "Remove";
+        if (type == TrumpReturn) return "Return";
+        if (type == TrumpExchange) return "Exchange";
+        if (type == TrumpDisservice) return "Disservice";
+        if (type == TrumpRefresh) return "Refresh";
+        return "";
+    }
+
+    private bool DrawTrump(int player)
+    {
+        EnsureTrumpBuffers();
+        if (TrumpCountInHand(player) >= maxTrumpsPerPlayer || trumpCount >= trumpType.Length)
+        {
+            return false;
+        }
+        trumpType[trumpCount] = Random.Range(1, 26);
+        trumpOwner[trumpCount] = player;
+        if (logDeals)
+        {
+            Debug.Log("CardDealer: trump " + TrumpName(trumpType[trumpCount])
+                + " -> jogador " + player + ".");
+        }
+        trumpCount++;
+        RequestSerialization();
+        return true;
+    }
+
+    private int TrumpGlobalIndex(int player, int handIndex)
+    {
+        if (handIndex < 0) return -1;
+        int seen = 0;
+        for (int i = 0; i < trumpCount; i++)
+        {
+            if (trumpOwner[i] != player) continue;
+            if (seen == handIndex) return i;
+            seen++;
+        }
+        return -1;
+    }
+
+    private void RemoveTrumpFromHand(int index)
+    {
+        for (int i = index; i < trumpCount - 1; i++)
+        {
+            trumpType[i] = trumpType[i + 1];
+            trumpOwner[i] = trumpOwner[i + 1];
+        }
+        trumpCount--;
+        trumpType[trumpCount] = 0;
+        trumpOwner[trumpCount] = 0;
+    }
+
+    private bool IsGoFor(int type)
+    {
+        return type >= TrumpGo17 && type <= TrumpGo27;
+    }
+
+    private void RemoveTableTrumpAt(int index)
+    {
+        for (int i = index; i < tableTrumpCount - 1; i++)
+        {
+            tableTrumpType[i] = tableTrumpType[i + 1];
+            tableTrumpOwner[i] = tableTrumpOwner[i + 1];
+        }
+        tableTrumpCount--;
+        tableTrumpType[tableTrumpCount] = 0;
+        tableTrumpOwner[tableTrumpCount] = 0;
+        RefreshScores();
+    }
+
+    private void PlaceTrump(int player, int type)
+    {
+        if (IsGoFor(type))
+        {
+            for (int i = tableTrumpCount - 1; i >= 0; i--)
+            {
+                if (IsGoFor(tableTrumpType[i])) RemoveTableTrumpAt(i);
+            }
+        }
+        if (tableTrumpCount >= tableTrumpCapacity) return;
+        tableTrumpType[tableTrumpCount] = type;
+        tableTrumpOwner[tableTrumpCount] = player;
+        tableTrumpCount++;
+        RefreshScores();
+    }
+
+    public int EffectiveTarget()
+    {
+        for (int i = tableTrumpCount - 1; i >= 0; i--)
+        {
+            int type = tableTrumpType[i];
+            if (type == TrumpGo17) return 17;
+            if (type == TrumpGo24) return 24;
+            if (type == TrumpGo27) return 27;
+        }
+        return targetScore;
+    }
+
+    public int CurrentBet()
+    {
+        int value = baseBet;
+        for (int i = 0; i < tableTrumpCount; i++)
+        {
+            int type = tableTrumpType[i];
+            if (type == TrumpOneUp || type == TrumpBloodshed) value++;
+            else if (type == TrumpTwoUp) value += 2;
+            else if (type == TrumpShield) value--;
+            else if (type == TrumpShieldPlus) value -= 2;
+        }
+        return value < 0 ? 0 : value;
+    }
+
+    private bool HasBless()
+    {
+        for (int i = 0; i < tableTrumpCount; i++)
+        {
+            if (tableTrumpType[i] == TrumpBless) return true;
+        }
+        return false;
+    }
+
+    private bool DestroyOpponentTrump(int player)
+    {
+        for (int i = tableTrumpCount - 1; i >= 0; i--)
+        {
+            if (tableTrumpOwner[i] == 1 - player)
+            {
+                RemoveTableTrumpAt(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private int LatestCardEntry(int player)
+    {
+        for (int i = logCount - 1; i >= 0; i--)
+        {
+            if (logActive[i] != 0 && logOwner[i] == player) return i;
+        }
+        return -1;
+    }
+
+    private bool LastHiddenIsProtected(int player, int entry)
+    {
+        if (entry < 0 || logHidden[entry] == 0) return false;
+        int hiddenCount = 0;
+        for (int i = 0; i < logCount; i++)
+        {
+            if (logActive[i] != 0 && logOwner[i] == player && logHidden[i] != 0)
+                hiddenCount++;
+        }
+        return hiddenCount <= 1;
+    }
+
+    private void RemoveLatestCard(int player)
+    {
+        int entry = LatestCardEntry(player);
+        if (entry < 0 || LastHiddenIsProtected(player, entry)) return;
+        logActive[entry] = 0;
+        StructureChanged();
+    }
+
+    private void ExchangeLatestCards(int player)
+    {
+        int own = LatestCardEntry(player);
+        int other = LatestCardEntry(1 - player);
+        if (own < 0 || other < 0 || LastHiddenIsProtected(player, own)
+            || LastHiddenIsProtected(1 - player, other)) return;
+        logOwner[own] = 1 - player;
+        logOwner[other] = player;
+        StructureChanged();
+    }
+
+    private void RefreshHand(int player)
+    {
+        for (int i = 0; i < logCount; i++)
+        {
+            if (logOwner[i] == player) logActive[i] = 0;
+        }
+        StructureChanged();
+        OwnerDeal(player, true);
+        OwnerDeal(player, false);
+    }
+
+    /// <summary>Consome uma trump da mao do jogador, sem encerrar seu turno.</summary>
+    private void AcceptTrump(int player, int handIndex)
+    {
+        int globalIndex = TrumpGlobalIndex(player, handIndex);
+        if (globalIndex < 0) return;
+        int type = trumpType[globalIndex];
+        RemoveTrumpFromHand(globalIndex);
+        consecutiveStays = 0;
+        if (type >= 1 && type <= 6) OwnerDealNumber(player, type + 1, false);
+        else if (IsGoFor(type) || type == TrumpOneUp || type == TrumpTwoUp
+            || type == TrumpShield || type == TrumpShieldPlus || type == TrumpBless)
+            PlaceTrump(player, type);
+        else if (type == TrumpBloodshed)
+        {
+            PlaceTrump(player, type);
+            DrawTrump(player);
+        }
+        else if (type == TrumpDestroy) DestroyOpponentTrump(player);
+        else if (type == TrumpReincarnation)
+        {
+            if (DestroyOpponentTrump(player)) DrawTrump(player);
+        }
+        else if (type == TrumpFriendship)
+        {
+            DrawTrump(player); DrawTrump(player);
+            DrawTrump(1 - player); DrawTrump(1 - player);
+        }
+        else if (type == TrumpHush) OwnerDeal(player, true);
+        else if (type == TrumpPerfectDraw)
+        {
+            int needed = EffectiveTarget() - HandTotal(player);
+            if (needed > 0) OwnerDealNumber(player, needed, false);
+        }
+        else if (type == TrumpRemove)
+        {
+            if ((hookMask & (1 << (1 - player))) != 0)
+                hookMask &= ~(1 << (1 - player));
+            else RemoveLatestCard(1 - player);
+        }
+        else if (type == TrumpReturn) RemoveLatestCard(player);
+        else if (type == TrumpExchange)
+        {
+            if (hookMask != 0) hookMask = 0;
+            else ExchangeLatestCards(player);
+        }
+        else if (type == TrumpDisservice) OwnerDeal(1 - player, false);
+        else if (type == TrumpRefresh) RefreshHand(player);
+        if (pendingFly.Count > 0) StartDraining();
+        RequestSerialization();
+        if (logTurns) Debug.Log("CardDealer: jogador " + player + " usou " + TrumpName(type) + ".");
     }
 
     /// <summary>Passa a vez. So o dono do baralho chama, e so depois de uma jogada aceita.</summary>
@@ -962,10 +1372,14 @@ public class CardDealer : MenSharpBehaviour
     {
         int a = HandTotal(0);
         int b = HandTotal(1);
-        bool overA = a > targetScore;
-        bool overB = b > targetScore;
+        int target = EffectiveTarget();
+        bool overA = a > target;
+        bool overB = b > target;
         int winner;
-        if (overA && overB)
+        if (hookMask == 1) winner = 1;
+        else if (hookMask == 2) winner = 0;
+        else if (hookMask == 3) winner = -1;
+        else if (overA && overB)
         {
             // os dois estouraram: perde quem tiver o numero maior
             winner = a == b ? -1 : (a > b ? 1 : 0);
@@ -985,7 +1399,7 @@ public class CardDealer : MenSharpBehaviour
         if (logTurns)
         {
             Debug.Log("CardDealer: rodada encerrada por duas passadas. "
-                + a + " x " + b + " (alvo " + targetScore + ")."
+                + a + " x " + b + " (alvo " + target + ")."
                 + (winner < 0 ? " Empatou." : " Venceu o jogador " + winner + "."));
         }
         FinishRound(winner);
@@ -1000,6 +1414,8 @@ public class CardDealer : MenSharpBehaviour
         roundWinner = winner;
         consecutiveStays = 0;
         EnsureLife();
+        int damage = CurrentBet();
+        bool blessSaved = false;
 
         if (winner < 0)
         {
@@ -1011,15 +1427,15 @@ public class CardDealer : MenSharpBehaviour
         else
         {
             int loser = 1 - winner;
-            int damage = roundDamage + (roundNumber - 1) * roundDamageGrowth;
-            if (damage < 0)
+            if (HasBless() && life[loser] <= damage)
             {
-                damage = 0;
+                life[loser] = 1;
+                blessSaved = true;
             }
-            life[loser] -= damage;
-            if (life[loser] < 0)
+            else
             {
-                life[loser] = 0;
+                life[loser] -= damage;
+                if (life[loser] < 0) life[loser] = 0;
             }
             if (logTurns)
             {
@@ -1027,6 +1443,9 @@ public class CardDealer : MenSharpBehaviour
                     + loser + " perdeu " + damage + " de vida (resta " + life[loser] + ").");
             }
         }
+
+        baseBet = blessSaved ? Mathf.Max(0, baseBet - 1)
+            : Mathf.Max(0, baseBet + roundDamageGrowth);
 
         RequestSerialization();
         if (MatchFinished())
@@ -1057,6 +1476,10 @@ public class CardDealer : MenSharpBehaviour
         ClearHand();
         logCount = 0;
         logApplied = 0;
+        trumpCount = 0;
+        tableTrumpCount = 0;
+        hookMask = 0;
+        RefreshScores();
         if (logTurns)
         {
             Debug.Log("CardDealer: partida encerrada na rodada " + roundNumber
@@ -1078,17 +1501,23 @@ public class CardDealer : MenSharpBehaviour
         }
     }
 
-    private void EnsureTrumpUsed()
+    private void EnsureTrumpBuffers()
     {
-        int hands = HandCount();
-        int words = (hands + 31) / 32;
-        if (words < 1)
+        int handCapacity = maxTrumpsPerPlayer * 2;
+        if (trumpType == null || trumpOwner == null || trumpType.Length != handCapacity
+            || trumpOwner.Length != handCapacity)
         {
-            words = 1;
+            trumpType = new int[handCapacity];
+            trumpOwner = new int[handCapacity];
+            trumpCount = 0;
         }
-        if (trumpUsed == null || trumpUsed.Length != words)
+        if (tableTrumpType == null || tableTrumpOwner == null
+            || tableTrumpType.Length != tableTrumpCapacity
+            || tableTrumpOwner.Length != tableTrumpCapacity)
         {
-            trumpUsed = new int[words];
+            tableTrumpType = new int[tableTrumpCapacity];
+            tableTrumpOwner = new int[tableTrumpCapacity];
+            tableTrumpCount = 0;
         }
     }
 
@@ -1133,8 +1562,8 @@ public class CardDealer : MenSharpBehaviour
     }
 
     /// <summary>
-    /// Usa a carta de tarot <paramref name="cardIndex"/>. O dono do baralho
-    /// recusa se nao for a vez de quem jogou.
+    /// Usa a trump na posicao <paramref name="cardIndex"/> da mao local. O dono
+    /// do baralho recusa se nao for a vez de quem jogou.
     /// </summary>
     public void RequestUseTrump(int cardIndex)
     {
@@ -1189,11 +1618,24 @@ public class CardDealer : MenSharpBehaviour
             {
                 if (logTurns)
                 {
-                    Debug.Log("CardDealer: jogador " + turnIndex + " perdeu a rodada por tempo.");
+                    Debug.Log("CardDealer: jogador " + turnIndex + " recebeu o gancho por tempo.");
                 }
-                FinishRound(1 - turnIndex);
+                hookMask |= 1 << turnIndex;
+                consecutiveStays = 0;
+                if (hookMask == 3)
+                {
+                    // Sem resposta de nenhum dos dois jogadores, nao reinicia
+                    // rodadas empatadas indefinidamente.
+                    EndMatch(-1);
+                    return;
+                }
+                AdvanceTurn(turnIndex);
                 return;
             }
+        }
+        if (dealing || pendingFly.Count > 0)
+        {
+            return;
         }
         if (slots == null || slots.Length == 0)
         {
@@ -1285,72 +1727,6 @@ public class CardDealer : MenSharpBehaviour
         RefreshScores();
     }
 
-    /// <summary>Some com a ultima carta comprada e fecha o leque.</summary>
-    private void RemoveLastCard()
-    {
-        Prune();
-        int last = hand.Count - 1;
-        if (last < 0)
-        {
-            return;
-        }
-        // o historico precisa perder a mesma carta, senao o dono voltaria a
-        // mandar um estado que ja nao existe na mesa dos outros
-        if (logCount > 0)
-        {
-            logCount--;
-            logValue[logCount] = 0;
-            logOwner[logCount] = 0;
-            if (logApplied > logCount)
-            {
-                logApplied = logCount;
-            }
-            if (dealIndex > 0)
-            {
-                dealIndex--;
-            }
-            RequestSerialization();
-        }
-        if (hand[last] != null)
-        {
-            Destroy(hand[last]);
-        }
-        hand.RemoveAt(last);
-        handOf.RemoveAt(last);
-        slotOf.RemoveAt(last);
-        cardValue.RemoveAt(last);
-        special.RemoveAt(last);
-        RepositionHand();
-        RefreshScores();
-    }
-
-    /// <summary>
-    /// Recalcula a casa de cada carta que ja pousou, sem animacao. As cartas em
-    /// voo sao deixadas como estao: elas recebem a casa final ao aterrissar.
-    /// </summary>
-    private void RepositionHand()
-    {
-        Prune();
-        int settled = hand.Count - flying;
-        if (settled < 0)
-        {
-            settled = 0;
-        }
-        Vector3 scale = CardScale();
-        for (int i = 0; i < settled; i++)
-        {
-            GameObject card = hand[i];
-            if (card == null)
-            {
-                continue;
-            }
-            int slot = slotOf[i];
-            card.transform.localPosition = SlotPosition(slot, card.transform.parent);
-            card.transform.localRotation = SlotRotation(slot);
-            card.transform.localScale = scale;
-        }
-    }
-
     /// <summary>
     /// Cada jogador ganha uma carta especial na abertura: a primeira que ele
     /// recebe. Como o baralho ja vem embaralhado, o numero de cada uma tambem
@@ -1433,7 +1809,7 @@ public class CardDealer : MenSharpBehaviour
     /// <see cref="OwnerDeal"/>. Nos outros maquinas quem adianta o contador de
     /// "restam N" e <see cref="ApplyLog"/>, uma vez por entrada.
     /// </summary>
-    private bool InstantiateFromEntry(int entry)
+    private bool InstantiateFromEntry(int entry, bool animate)
     {
         if (entry < 0 || entry >= logCount || logValue == null)
         {
@@ -1454,11 +1830,20 @@ public class CardDealer : MenSharpBehaviour
         Transform machine = machineAnchor != null ? machineAnchor : transform;
         GameObject card = Instantiate(cardPrefab, anchor);
         Transform cardTransform = card.transform;
-        Vector3 spawnPosition = machine.position;
-        spawnPosition.y = cardWorldY;
-        cardTransform.position = spawnPosition;
-        cardTransform.localRotation = toRotation * Quaternion.Euler(0f, flipAngle, 0f);
-        cardTransform.localScale = CardScale() * startScale;
+        if (animate)
+        {
+            Vector3 spawnPosition = machine.position;
+            spawnPosition.y = cardWorldY;
+            cardTransform.position = spawnPosition;
+            cardTransform.localRotation = toRotation * Quaternion.Euler(0f, flipAngle, 0f);
+            cardTransform.localScale = CardScale() * startScale;
+        }
+        else
+        {
+            cardTransform.localPosition = SlotPosition(slot, anchor);
+            cardTransform.localRotation = toRotation;
+            cardTransform.localScale = CardScale();
+        }
 
         // entra na mesa antes de voar, e a casa fica registrada agora: se a casa
         // fosse recalculada no voo, as cartas do mesmo lote, que ja estariam
@@ -1469,10 +1854,9 @@ public class CardDealer : MenSharpBehaviour
         cardValue.Add(value);
         RefreshScores();
 
-        // slot == 0 e a primeira carta daquele jogador, e nao a primeira da mesa:
-        // na abertura alternada, a carta 1 e do jogador 0 e a carta 2 do jogador 1,
-        // e as duas sao especiais.
-        bool isSpecial = ShouldMarkSpecial(slot == 0);
+        // A marca de oculta pertence a entrada do historico, inclusive Hush e
+        // Refresh; nao depende da casa atual depois de Remove ou Exchange.
+        bool isSpecial = logHidden[entry] != 0;
         special.Add(isSpecial);
         ApplyCardMaterial(card, value, isSpecial);
         if (logDeals)
@@ -1480,14 +1864,17 @@ public class CardDealer : MenSharpBehaviour
             Debug.Log("CardDealer: carta " + value + " -> jogador " + target
                 + " (casa " + slot + (isSpecial ? ", especial" : "") + "). Restam " + DeckRemaining + ".");
         }
-        pendingFly.Add(index);
+        if (animate)
+        {
+            pendingFly.Add(index);
+        }
         return true;
     }
 
     /// <summary>
     /// Escolhe o material da carta pelo numero que ela tem: o material do valor
     /// <paramref name="value"/> fica na posicao <c>value - deckMinValue</c> de
-    /// <see cref="cardMaterials"/>. Uma carta de tarot oculta, se
+    /// <see cref="cardMaterials"/>. Uma carta numerica oculta, se
     /// <see cref="hideSpecialCards"/> estiver ligado, troca esse material pelo
     /// <see cref="hiddenMaterial"/>.
     ///
@@ -1645,23 +2032,6 @@ public class CardDealer : MenSharpBehaviour
     {
         float inverse = 1f - t;
         return 1f - inverse * inverse * inverse;
-    }
-
-    /// <summary>Tira da mesa as cartas que foram destruidas por outra via.</summary>
-    private void Prune()
-    {
-        for (int i = hand.Count - 1; i >= 0; i--)
-        {
-            if (hand[i] == null)
-            {
-                hand.RemoveAt(i);
-                handOf.RemoveAt(i);
-                slotOf.RemoveAt(i);
-                cardValue.RemoveAt(i);
-                special.RemoveAt(i);
-            }
-        }
-        RefreshScores();
     }
 
     private bool IsReady()

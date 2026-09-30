@@ -1095,14 +1095,14 @@ MonoBehaviour:
     \"kind\": \"String\", \"value\": \"\\n   at PlayerSlot.RequestStartMatch in Assets/Scripts/PlayerSlot.cs:155:13\"},\n   
     {\"name\": \"__retaddr_38\", \"kind\": \"UInt32\", \"value\": \"1532\"},\n   
     {\"name\": \"__const_8_SystemString\", \"kind\": \"String\", \"value\": \"\\n  
-    at PlayerSlot.RequestUseTrump in Assets/Scripts/PlayerSlot.cs:165:13\"},\n   
+    at PlayerSlot.RequestUseTrump in Assets/Scripts/PlayerSlot.cs:164:13\"},\n   
     {\"name\": \"__retaddr_42\", \"kind\": \"UInt32\", \"value\": \"1688\"},\n   
     {\"name\": \"__const_9_SystemString\", \"kind\": \"String\", \"value\": \"\\n  
-    at PlayerSlot.Acknowledge in Assets/Scripts/PlayerSlot.cs:196:20\"},\n    {\"name\":
+    at PlayerSlot.Acknowledge in Assets/Scripts/PlayerSlot.cs:195:20\"},\n    {\"name\":
     \"fn_MenSharp_MenSharpBehaviour_RequestSerialization_17__return\", \"kind\":
     \"UInt32\", \"value\": \"0\"},\n    {\"name\": \"__retaddr_50\", \"kind\": \"UInt32\",
     \"value\": \"1952\"},\n    {\"name\": \"__const_10_SystemString\", \"kind\":
-    \"String\", \"value\": \"\\n   at PlayerSlot.Acknowledge in Assets/Scripts/PlayerSlot.cs:202:29\"},\n   
+    \"String\", \"value\": \"\\n   at PlayerSlot.Acknowledge in Assets/Scripts/PlayerSlot.cs:201:29\"},\n   
     {\"name\": \"__const_11_SystemString\", \"kind\": \"String\", \"value\": \"\"},\n   
     {\"name\": \"__const_12_SystemInt32\", \"kind\": \"Int32\", \"value\": \"6\"},\n   
     {\"name\": \"__const_13_SystemInt32\", \"kind\": \"Int32\", \"value\": \"2\"},\n   
@@ -1124,14 +1124,14 @@ MonoBehaviour:
     \"kind\": \"String\", \"value\": \"Unhandled exception: \"},\n    {\"name\":
     \"__retaddr_80\", \"kind\": \"UInt32\", \"value\": \"3456\"},\n    {\"name\":
     \"__const_22_SystemString\", \"kind\": \"String\", \"value\": \"\\n   at PlayerSlot.Send
-    in Assets/Scripts/PlayerSlot.cs:170:20\"},\n    {\"name\": \"__retaddr_89\",
+    in Assets/Scripts/PlayerSlot.cs:169:20\"},\n    {\"name\": \"__retaddr_89\",
     \"kind\": \"UInt32\", \"value\": \"3708\"},\n    {\"name\": \"__const_23_SystemString\",
-    \"kind\": \"String\", \"value\": \"\\n   at PlayerSlot.Send in Assets/Scripts/PlayerSlot.cs:170:36\"},\n   
+    \"kind\": \"String\", \"value\": \"\\n   at PlayerSlot.Send in Assets/Scripts/PlayerSlot.cs:169:36\"},\n   
     {\"name\": \"__const_24_SystemString\", \"kind\": \"String\", \"value\": \"PlayerSlot:
     intencao ignorada, este Slot nao e do jogador local.\"},\n    {\"name\": \"__const_25_SystemInt32\",
     \"kind\": \"Int32\", \"value\": \"1\"},\n    {\"name\": \"__retaddr_99\", \"kind\":
     \"UInt32\", \"value\": \"4112\"},\n    {\"name\": \"__const_26_SystemString\",
-    \"kind\": \"String\", \"value\": \"\\n   at PlayerSlot.Send in Assets/Scripts/PlayerSlot.cs:181:29\"},\n   
+    \"kind\": \"String\", \"value\": \"\\n   at PlayerSlot.Send in Assets/Scripts/PlayerSlot.cs:180:29\"},\n   
     {\"name\": \"__const_27_SystemString\", \"kind\": \"String\", \"value\": \"PlayerSlot:
     jogador \"},\n    {\"name\": \"__const_28_SystemString\", \"kind\": \"String\",
     \"value\": \" pediu acao \"},\n    {\"name\": \"__const_29_SystemString\", \"kind\":
@@ -1350,27 +1350,27 @@ MonoBehaviour:
     \"column\": 9, \"function\": \"PlayerSlot.RequestStartMatch\"},\n    {\"address\":
     1464, \"file\": \"\", \"line\": 0, \"column\": 0, \"function\": \"PlayerSlot.RequestUseTrump\",
     \"kind\": \"function\"},\n    {\"address\": 1464, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 165, \"column\": 9, \"function\": \"PlayerSlot.RequestUseTrump\"},\n   
+    \"line\": 164, \"column\": 9, \"function\": \"PlayerSlot.RequestUseTrump\"},\n   
     {\"address\": 1660, \"file\": \"\", \"line\": 0, \"column\": 0, \"function\":
     \"PlayerSlot.Acknowledge\", \"kind\": \"function\"},\n    {\"address\": 1660,
-    \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 196, \"column\": 9, \"function\":
+    \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 195, \"column\": 9, \"function\":
     \"PlayerSlot.Acknowledge\"},\n    {\"address\": 1828, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 196, \"column\": 13, \"function\": \"PlayerSlot.Acknowledge\"},\n   
-    {\"address\": 1868, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 197,
+    \"line\": 195, \"column\": 13, \"function\": \"PlayerSlot.Acknowledge\"},\n   
+    {\"address\": 1868, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 196,
     \"column\": 9, \"function\": \"PlayerSlot.Acknowledge\"},\n    {\"address\":
-    1868, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 198, \"column\":
+    1868, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 197, \"column\":
     13, \"function\": \"PlayerSlot.Acknowledge\"},\n    {\"address\": 1884, \"file\":
-    \"Assets/Scripts/PlayerSlot.cs\", \"line\": 200, \"column\": 9, \"function\":
+    \"Assets/Scripts/PlayerSlot.cs\", \"line\": 199, \"column\": 9, \"function\":
     \"PlayerSlot.Acknowledge\"},\n    {\"address\": 1904, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 201, \"column\": 9, \"function\": \"PlayerSlot.Acknowledge\"},\n   
-    {\"address\": 1924, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 202,
+    \"line\": 200, \"column\": 9, \"function\": \"PlayerSlot.Acknowledge\"},\n   
+    {\"address\": 1924, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 201,
     \"column\": 9, \"function\": \"PlayerSlot.Acknowledge\"},\n    {\"address\":
     2080, \"file\": \"\", \"line\": 0, \"column\": 0, \"function\": \"PlayerSlot.Assign\",
     \"kind\": \"function\"},\n    {\"address\": 2080, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 211, \"column\": 9, \"function\": \"PlayerSlot.Assign\"},\n    {\"address\":
-    2100, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 212, \"column\":
+    \"line\": 210, \"column\": 9, \"function\": \"PlayerSlot.Assign\"},\n    {\"address\":
+    2100, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 211, \"column\":
     9, \"function\": \"PlayerSlot.Assign\"},\n    {\"address\": 2100, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 212, \"column\": 22, \"function\": \"PlayerSlot.Assign\"},\n    {\"address\":
+    \"line\": 211, \"column\": 22, \"function\": \"PlayerSlot.Assign\"},\n    {\"address\":
     2224, \"file\": \"\", \"line\": 0, \"column\": 0, \"function\": \"PlayerSlot.ActionSeq\",
     \"kind\": \"function\"},\n    {\"address\": 2224, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
     \"line\": 73, \"column\": 15, \"function\": \"PlayerSlot.ActionSeq\"},\n    {\"address\":
@@ -1397,35 +1397,35 @@ MonoBehaviour:
     3396, \"file\": \"\", \"line\": 0, \"column\": 0, \"function\": \"the unhandled
     exception report\", \"kind\": \"halt\"},\n    {\"address\": 3428, \"file\": \"\",
     \"line\": 0, \"column\": 0, \"function\": \"PlayerSlot.Send\", \"kind\": \"function\"},\n   
-    {\"address\": 3428, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 170,
+    {\"address\": 3428, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 169,
     \"column\": 9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 3596, \"file\":
-    \"Assets/Scripts/PlayerSlot.cs\", \"line\": 170, \"column\": 13, \"function\":
+    \"Assets/Scripts/PlayerSlot.cs\", \"line\": 169, \"column\": 13, \"function\":
     \"PlayerSlot.Send\"},\n    {\"address\": 3848, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 170, \"column\": 26, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    3916, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 171, \"column\":
+    \"line\": 169, \"column\": 26, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    3916, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 170, \"column\":
     9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 3916, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 172, \"column\": 13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    3932, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 173, \"column\":
+    \"line\": 171, \"column\": 13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    3932, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 172, \"column\":
     13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 3932, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 174, \"column\": 17, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    3932, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 174, \"column\":
+    \"line\": 173, \"column\": 17, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    3932, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 173, \"column\":
     26, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 3956, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 176, \"column\": 13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    3972, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 178, \"column\":
+    \"line\": 175, \"column\": 13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    3972, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 177, \"column\":
     9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 3992, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 179, \"column\": 9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    4012, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 180, \"column\":
+    \"line\": 178, \"column\": 9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    4012, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 179, \"column\":
     9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 4032, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 180, \"column\": 18, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    4084, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 181, \"column\":
+    \"line\": 179, \"column\": 18, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    4084, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 180, \"column\":
     9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 4232, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 182, \"column\": 9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    4248, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 183, \"column\":
+    \"line\": 181, \"column\": 9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    4248, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 182, \"column\":
     9, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 4248, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 184, \"column\": 13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
-    4248, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 184, \"column\":
+    \"line\": 183, \"column\": 13, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    4248, \"file\": \"Assets/Scripts/PlayerSlot.cs\", \"line\": 183, \"column\":
     23, \"function\": \"PlayerSlot.Send\"},\n    {\"address\": 4600, \"file\": \"Assets/Scripts/PlayerSlot.cs\",
-    \"line\": 184, \"column\": 22, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
+    \"line\": 183, \"column\": 22, \"function\": \"PlayerSlot.Send\"},\n    {\"address\":
     4632, \"file\": \"\", \"line\": 0, \"column\": 0, \"function\": \"MenSharp.MenSharpBehaviour.RequestSerialization\",
     \"kind\": \"function\"},\n    {\"address\": 4632, \"file\": \"corlib/MenSharpBehaviour.Unity.cs\",
     \"line\": 62, \"column\": 13, \"function\": \"MenSharp.MenSharpBehaviour.RequestSerialization\"},\n   
