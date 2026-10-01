@@ -49,7 +49,97 @@ compilador usado pelos comportamentos de Udon.
 - Controles da mão de trumps: selecionar uma carta e chamar
   `RequestUseTrump(indiceNaMinhaMao)`. `TrumpCountInHand`, `TrumpAt` e
   `TrumpName` fornecem os dados sem depender do visual.
-- Visual da carta de gancho para o timeout.
+### Timer de turno: 1 minuto como padrão, configurável
+
+O `CardDealer.cs` já tem o gancho lógico do timeout, mas ele está desligado
+(`turnTimeoutSeconds = 0` na cena) e ainda não há nada que o jogador veja
+contando. Falta fechar isto em três partes.
+
+**1. Timer no `CardDealer`, com valor padrão de 1 minuto**
+
+- Mudar o padrão do campo `turnTimeoutSeconds` de `0f` para `60f`
+  (`Assets/Scripts/CardDealer.cs:161`). Continua sendo variável pública e
+  editável no inspetor, então dá para testar com 5 ou 10 segundos sem
+  compilar.
+- `0f` continua significando "sem timeout". Manter esse contrato para não
+  quebrar o modo de teste.
+- A contagem já respeita o momento certo: só começa depois da distribuição
+  animada (`openingDealt && !dealing && pendingFly.Count == 0`,
+  `Assets/Scripts/CardDealer.cs:1740`) e é reiniciada por
+  `ResetTurnDeadline()` a cada virada de vez
+  (`Assets/Scripts/CardDealer.cs:1493`).
+- **Mudança de regra pedida:** hoje o estouro do tempo dá um *gancho*
+  (`hookMask |= 1 << turnIndex`, linha 1753), que faz o jogador perder a
+  rodada mas ainda depende da comparação final de somas. O pedido atual é
+  **perder a rodada automaticamente**, sem passar pelo gancho. Escolher uma
+  das duas saídas:
+  - dar o gancho e chamar a mesma rotina de fim de rodada que já existe
+    (`hookMask == 3` já encerra a partida com `-1`, linha 1755), ou
+  - manter o gancho como mecânica separada e adicionar um caminho de timeout
+    que chame direto a resolução da rodada.
+  Enquanto isso não for decidido, o timeout segue sendo só um gancho.
+- A derrota por tempo precisa de um sinal para a interface: um evento/flag
+  sincronizado para o HUD e para as TVs anunciarem *quem* perdeu por tempo.
+- `Remove` e `Exchange` ainda limpam `hookMask` (linhas 1461-1468). Definir se
+  esse cancelamento continua valendo quando a derrota for automática por
+  tempo. Uma trump não deve conseguir salvar quem já perdeu por tempo.
+- Registrar no ClientSim: timeout com os dois jogadores parados, timeout
+  interrompido no meio da distribuição, e o caso de os dois estourarem o
+  tempo.
+
+**2. Câmera de contagem**
+
+Criar uma câmera dedicada que renderiza só o cronômetro, isolada da vista do
+jogador, para servir de fonte de textura.
+
+- GameObject novo dentro de `TwentyOne`, ao lado de `Post Processing Volume`.
+  Sugestão de nome: `TimerCamera`.
+- Câmera ortográfica, `clearFlags = SolidColor`, `cullingMask` de uma layer
+  dedicada (ex.: `TimerOnly`) para que nada além do texto entre no frame.
+- Distante de `Main Camera`, sem `AudioListener` (só a câmera principal pode
+  ter um). Não entra no `VRCSceneDescriptor` nem em nenhum array de câmera.
+- `targetTexture` apontando para uma `RenderTexture` (ex.: 512x256), com
+  `antiAliasing` e `depth` ajustados para o custo no Quest.
+- Um Canvas em Screen Space - Camera apontando para ela, ou um TextMeshPro
+  3D posicionado no frustum, com o texto grande e centralizado. O TMP é
+  preferível: os outros textos do projeto já usam TMP.
+- O texto é escrito por um UdonBehaviour local (nada de rede): lê o tempo
+  restante do `CardDealer` e formata `M:SS`. Estejam todos na mesma cena,
+  então os dois lados vendo a mesma câmera veem o mesmo número.
+
+**3. Shader que leva a saída da câmera para as TVs**
+
+Todas as TVs do mundo apontam para a mesma `RenderTexture`, então basta um
+material com um shader que amostra essa textura.
+
+- Shader novo, por exemplo em `Assets/Shaders/TimerBroadcast.shader`,
+  seguindo o estilo dos shaders próprios do projeto em
+  `Assets/RoomAtmosphere/Materials/` (ver `CRTReference.shader` para o
+  padrão de CRT que as TVs já usam).
+- O shader amostra a `RenderTexture` do timer e combina por cima do que a TV
+  já exibia. Precisa ser um blend, não uma troca: se a câmera falhar, a TV não
+  pode ficar preta.
+- Propriedades expostas no material: `_TimerTex`, corte/zoom do texto dentro
+  da textura, intensidade do overlay, e um `_TimerStrength` para subir a
+  opacidade conforme o tempo acaba (fica vermelho e pisca nos últimos
+  segundos, por exemplo).
+- **Restrição do VRChat:** o material precisa ser compatível com a
+  whitelist de shaders. Um shader customizado com Properties expostas passa
+  pela whitelist, mas só se estiver entre os shaders permitidos da build ou
+  usando um dos shaders standard. Verificar
+  `ProjectSettings/GraphicsSettings.asset` → `m_AlwaysIncludedShaders` e
+  confirmar com o SDK antes de Investir no shader. Fallback se não passar:
+  fazer as TVs apontarem direto para a `RenderTexture` e sobrepor o TMP como
+  objeto 3D na frente do painel, sem shader.
+- Como não há TVs na cena ainda (`Assets/Scenes/Game.unity` não tem nenhum
+  objeto com nome de TV, Screen ou Monitor), essa parte depende de as TVs
+  existirem. Definir quantas são e onde ficam antes de montar o material.
+- Uma `RenderTexture` compartilhada por várias TVs é o caminho certo: uma
+  câmera, uma textura, N materiais apontando para ela. Não criar uma câmera
+  por TV.
+- Custo: essa câmera roda todo quadro. Verificar no profiler se o custo é
+  aceitável e, se não for, considerar renderizar a 30fps em vez de todo
+  quadro, já que o cronômetro só muda uma vez por segundo.
 - A revelação da carta oculta ao fim da rodada ainda não foi definida. A
   primeira carta de cada jogador permanece visualmente oculta até a limpeza.
 - Entrada ou saída de jogador durante a partida ainda não faz nova atribuição
@@ -65,7 +155,11 @@ compilador usado pelos comportamentos de Udon.
   ganhar uma após Hit. Confirmar se esses padrões devem mudar.
 - Quando e para quem revelar a carta numérica oculta.
 - Como mostrar a derrota por tempo e sua interação futura com `Remove` e
-  `Exchange`.
+  `Exchange`. Ver a seção "Timer de turno" acima: falta decidir se a derrota
+  por tempo é automática ou passa pelo gancho.
+- Se o valor de 1 minuto é o padrão final do timeout, e se ele muda entre
+  rodadas ou por trump.
+- Quantas TVs o mundo tem e onde elas ficam, para o shader do cronômetro.
 
 ## Limitação do editor
 
