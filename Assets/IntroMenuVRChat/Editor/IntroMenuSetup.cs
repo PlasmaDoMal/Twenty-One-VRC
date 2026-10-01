@@ -17,7 +17,7 @@ public static class IntroMenuSetup
  {
     if (GameObject.Find("IntroSystem") != null) throw new System.InvalidOperationException("IntroSystem already exists. Refusing to duplicate.");
     var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-    if (scene.path != "Assets/Scenes/Menu.unity") throw new System.InvalidOperationException("Expected Menu scene.");
+    if (scene.path != "Assets/Scenes/GameMap.unity") throw new System.InvalidOperationException("Expected GameMap scene.");
     foreach (string folder in new[]{"Materials","UI","Prefabs","Backups"}) Directory.CreateDirectory(Root+"/"+folder);
     AssetDatabase.Refresh();
     // Preserve the complete pre-install scene, including unsaved user edits.

@@ -1,6 +1,6 @@
 # Menu inicial VRChat — Twenty One
 
-Cena `Assets/Scenes/Menu.unity`, Unity 2022.3.22f1, VRCSDK Worlds e MenSharp.
+Cena `Assets/Scenes/GameMap.unity`, Unity 2022.3.22f1, VRCSDK Worlds e MenSharp.
 
 ## Migração para MenSharp
 
@@ -122,7 +122,7 @@ validation.txt contém o relatório bruto.
 
 ## Como testar
 
-1. Abra Assets/Scenes/Menu.unity e entre em Play Mode com ClientSim habilitado.
+1. Abra Assets/Scenes/GameMap.unity e entre em Play Mode com ClientSim habilitado.
 2. Aceite ou feche a janela própria do ClientSim. Essa interface pertence ao simulador e não ao menu criado.
 3. Confira preto atrás de TWENTY ONE e JOGAR; tente caminhar e olhar ao redor.
 4. Clique JOGAR repetidamente: deve haver uma única transição e movimento somente depois da abertura.
