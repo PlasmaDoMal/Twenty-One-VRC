@@ -15,6 +15,15 @@ Shader "TwentyOne/CRTReference"
         _Aspect("Surface aspect (width / height)", Float) = 1
         [Toggle] _FlipX("Mirror X (fixes reversed text)", Float) = 1
         [Toggle] _ColonBlink("Blink colon", Float) = 0
+
+        [Header(CRT effect)]
+        [Toggle] _CRT("Enable CRT effect", Float) = 1
+        _Curvature("Screen curvature", Range(0,0.5)) = 0.15
+        _MaskStrength("RGB phosphor mask", Range(0,1)) = 0.35
+        _MaskCount("RGB mask triads across screen", Float) = 200
+        _Flicker("Flicker", Range(0,0.2)) = 0.03
+        _Noise("Static noise", Range(0,0.3)) = 0.05
+        _Roll("Rolling bar", Range(0,1)) = 0.3
     }
     SubShader
     {
@@ -55,6 +64,13 @@ Shader "TwentyOne/CRTReference"
             float  _Aspect;
             half   _FlipX;
             half   _ColonBlink;
+            half   _CRT;
+            float  _Curvature;
+            float  _MaskStrength;
+            float  _MaskCount;
+            float  _Flicker;
+            float  _Noise;
+            float  _Roll;
 
             // 7-segment masks (bit0=a top, 1=b, 2=c, 3=d bottom, 4=e, 5=f, 6=g middle)
             static const int SEG[10] = { 63, 6, 91, 79, 102, 109, 125, 7, 127, 111 };
@@ -146,8 +162,20 @@ Shader "TwentyOne/CRTReference"
                 float2 p = i.uv - 0.5;
                 if (_FlipX > 0.5) p.x = -p.x;
 
-                half scan = (half)(0.87 + 0.13 * sin(i.uv.y * 720.0));
-                half band = (half)(0.88 + 0.12 * sin(i.uv.y * 43.0));
+                // CRT: barrel distortion + soft rounded screen border
+                half crtMask = 1;
+                if (_CRT > 0.5)
+                {
+                    float2 c = p * 2.0;
+                    c += c * (c.yx * c.yx) * _Curvature;
+                    p = c * 0.5;
+                    float2 e = smoothstep(0.0, 0.012, 0.5 - abs(p));
+                    crtMask = (half)(e.x * e.y);
+                }
+                float2 suv = p + 0.5; // screen uv after distortion
+
+                half scan = (half)(0.87 + 0.13 * sin(suv.y * 720.0));
+                half band = (half)(0.88 + 0.12 * sin(suv.y * 43.0));
                 // saturate(len*1.4)^2 == saturate(dot(p,p)*1.96): no sqrt, no pow
                 half edge = (half)(1.0 - 0.6 * saturate(dot(p, p) * 1.96));
 
@@ -190,6 +218,24 @@ Shader "TwentyOne/CRTReference"
                     float xm = (1.0 - smoothstep(0.015, 0.032, min(abs(p.x - p.y * 0.65), abs(p.x + p.y * 0.65))))
                              * (1.0 - smoothstep(0.12, 0.18, abs(p.y)));
                     col += (half)xm * half3(0.13, 0.10, 0.10);
+                }
+
+                if (_CRT > 0.5)
+                {
+                    // RGB phosphor triads
+                    float3 tri = 0.75 + 0.25 * cos(6.28318 * (suv.x * _MaskCount + float3(0.0, 0.3333, 0.6667)));
+                    col *= (half3)lerp(float3(1, 1, 1), tri * 1.3333, _MaskStrength);
+
+                    // flicker + slow rolling bar
+                    col *= (half)(1.0 - _Flicker * 0.5 * (1.0 + sin(_Time.y * 95.0)));
+                    col *= (half)(1.0 + _Roll * 0.25 * sin((suv.y * 3.0 - _Time.y * 0.6) * 6.28318));
+
+                    // static noise (cheap hash, changes ~24x per second)
+                    float2 nc = floor(suv * float2(240.0 * _Aspect, 240.0)) + floor(_Time.y * 24.0) * float2(17.3, 31.7);
+                    float n = frac(52.9829189 * frac(dot(nc, float2(0.06711056, 0.00583715))));
+                    col += (half)((n - 0.5) * _Noise) * _Tint.rgb;
+
+                    col *= crtMask;
                 }
 
                 return half4(col * _Intensity, 1);

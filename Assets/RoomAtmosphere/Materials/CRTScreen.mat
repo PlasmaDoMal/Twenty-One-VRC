@@ -16,6 +16,7 @@ Material:
   - POI_VIDEO_EFFECTS
   - VIGNETTE_MASKED
   - _COLONBLINK_ON
+  - _CRT_ON
   - _FLIPX_ON
   - _LIGHTINGMODE_FLAT
   - _RIM2STYLE_POIYOMI
@@ -1017,6 +1018,7 @@ Material:
     - _BumpMapUV: 0
     - _BumpScale: 1
     - _CCIgnoreCastedShadows: 0
+    - _CRT: 1
     - _CameraAngleMax: 90
     - _CameraAngleMin: 45
     - _CenterOutDissolveInvert: 0
@@ -1167,6 +1169,7 @@ Material:
     - _CubemapBlendType: 0
     - _Cull: 1
     - _CurvFix: 1
+    - _Curvature: 0.016
     - _CurvatureU: 0
     - _CurvatureV: 0
     - _CustomColors: 0
@@ -1754,6 +1757,7 @@ Material:
     - _FXProximityColorType: 1
     - _FaceDiscardHeader: 0
     - _FlatLightingInfo: 0
+    - _Flicker: 0.113
     - _FlipBackfaceNormals: 1
     - _FlipX: 1
     - _FlipbookALColorOverrideBand: 0
@@ -2373,6 +2377,8 @@ Material:
     - _MainVertexColoring: 0
     - _MainVertexColoringEnabled: 0
     - _MainVertexColoringLinearSpace: 1
+    - _MaskCount: 200
+    - _MaskStrength: 0.535
     - _Matcap0ALAlphaAddBand: 0
     - _Matcap0ALChronoPanBand: 0
     - _Matcap0ALChronoPanSpeed: 0
@@ -2642,6 +2648,7 @@ Material:
     - _ModelAngleMax: 90
     - _ModelAngleMin: 45
     - _MultilayerMathBlurMapUV: 0
+    - _Noise: 0.045
     - _NormalCorrect: 0
     - _NormalCorrectAmount: 0.9
     - _OffsetFactor: 0
@@ -3099,6 +3106,7 @@ Material:
     - _RimTexUV: 0
     - _RimVRParallaxStrength: 1
     - _RimWidth: 0.8
+    - _Roll: 0.963
     - _RoughnessAnisotropy: 1
     - _SDFBlur: 0.1
     - _SDFNote: 0
