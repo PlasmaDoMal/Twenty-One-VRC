@@ -179,6 +179,13 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Via de entrada de cada jogador na mesa. Dono do baralho preenche sozinho; e aqui que o turno e validado.")]
     public PlayerSlot[] slots;
 
+    [Header("Turn events")]
+    [Tooltip("Menus que reagem a virada da vez. Cada um e avisado por OnTurnChanged, e decide sozinho se a vez e dele.")]
+    public TurnFadeIn[] turnListeners;
+
+    [Tooltip("Loga cada vez que a vez muda e para quem ela foi.")]
+    public bool logTurnEvents = false;
+
     [Tooltip("Loga no console as jogadas aceitas e as recusadas por vez errada.")]
     public bool logTurns = true;
 
@@ -242,6 +249,77 @@ public class CardDealer : MenSharpBehaviour
     private int[] slotSeqSeen = new int[0];
     private int roundWinner = -1;
     private float turnDeadline = 0f;
+
+    // Ultima vez transmitida aos ouvintes, para o aviso sair so na mudanca.
+    // Publicos de proposito: no MenSharp um campo privado vira estatico.
+    [HideInInspector] public bool turnEventActionable = false;
+    [HideInInspector] public int turnEventPlayer = -1;
+
+    // ------------------------------------------------------------------ eventos
+
+    /// <summary>
+    /// True quando ha jogada para fazer: a partida comecou, a abertura ja saiu,
+    /// nenhuma carta esta no ar e a partida nao acabou.
+    ///
+    /// E o mesmo portao que a UI usava antes de virar evento — sem ele o menu
+    /// apareceria na abertura, com a mao ainda vazia, e de novo a cada carta
+    /// que estivesse voando.
+    /// </summary>
+    public bool TurnIsActionable()
+    {
+        if (!matchStarted || matchOver)
+        {
+            return false;
+        }
+        if (!openingDealt)
+        {
+            return false;
+        }
+        if (dealing || pendingFly.Count > 0)
+        {
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Avisa os menus que a vez mudou. E o unico lugar que dispara evento: ele
+    /// guarda o ultimo estado transmitido e so fala quando ele muda de fato,
+    /// entao os menus nao precisam deduplicar nem ficam sondando por quadro.
+    ///
+    /// O aviso sai para os <i>dois</i> lados: o dono do baralho chama aqui
+    /// direto, e os outros clientes quando o estado chega por
+    /// <see cref="OnDeserialization"/>. Por isso nao e
+    /// <c>SendCustomNetworkEvent</c>: o estado da vez ja viaja nos campos
+    /// sincronizados, entao so falta reactsar localmente quando ele muda.
+    /// </summary>
+    public void NotifyTurnChanged()
+    {
+        bool actionable = TurnIsActionable();
+        int player = actionable ? turnIndex : -1;
+        if (actionable == turnEventActionable && player == turnEventPlayer)
+        {
+            return;
+        }
+        turnEventActionable = actionable;
+        turnEventPlayer = player;
+        if (logTurnEvents)
+        {
+            Debug.Log("CardDealer: vez mudou para o jogador " + player
+                + (actionable ? "" : " (sem jogada no momento)."));
+        }
+        if (turnListeners == null)
+        {
+            return;
+        }
+        for (int i = 0; i < turnListeners.Length; i++)
+        {
+            if (turnListeners[i] != null)
+            {
+                turnListeners[i].OnTurnChanged(actionable, player);
+            }
+        }
+    }
 
     /// <summary>Quantas cartas estao na mesa, somando as duas maos.</summary>
     public int CardCount
@@ -331,6 +409,9 @@ public class CardDealer : MenSharpBehaviour
     {
         RefreshScores();
         Scheduler.Run(() => WatchSlots());
+        // Fecha a partida que ja estava valendo quando este cliente entrou, para
+        // um menu que ficou aceso no outro cliente nao sobreviver a carga.
+        NotifyTurnChanged();
     }
 
     private async Task WatchSlots()
@@ -883,6 +964,7 @@ public class CardDealer : MenSharpBehaviour
             ApplyLog();
         }
         RefreshScores();
+        NotifyTurnChanged();
     }
 
     private void RebuildFromLog()
@@ -1359,6 +1441,7 @@ public class CardDealer : MenSharpBehaviour
         currentPlayer = turnIndex;
         ResetTurnDeadline();
         RequestSerialization();
+        NotifyTurnChanged();
     }
 
     private void ResetTurnDeadline()
@@ -1486,6 +1569,9 @@ public class CardDealer : MenSharpBehaviour
                 + (winner < 0 ? ", empate." : ", venceu o jogador " + winner + "."));
         }
         RequestSerialization();
+        // A partida acabou: some com os dois menus de uma vez, sem esperar
+        // qualquer virada de turno.
+        NotifyTurnChanged();
     }
 
     private void EnsureLife()
@@ -1795,6 +1881,11 @@ public class CardDealer : MenSharpBehaviour
                 dealing = false;
                 flying = 0;
                 ResetTurnDeadline();
+                // O portao de jogada so abre quando a ultima carta pousa. Sem
+                // este aviso, o menu do proximo jogador ficaria esperando o
+                // evento seguinte, que so viria com a jogada dele — e ele
+                // nunca teria como jogar.
+                NotifyTurnChanged();
             }
         }
     }
