@@ -8,22 +8,25 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: CRTScreen
-  m_Shader: {fileID: 4800000, guid: b4ed1bbd171c63b43b8f92181c3abb29, type: 3}
+  m_Shader: {fileID: 4800000, guid: ce403023cb77b9143810040e3b3c715b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - POI_VIDEO_EFFECTS
   - VIGNETTE_MASKED
+  - _COLONBLINK_ON
+  - _FLIPX_ON
   - _LIGHTINGMODE_FLAT
   - _RIM2STYLE_POIYOMI
   - _RIMSTYLE_POIYOMI
+  - _SHOWTEXT_ON
   - _STOCHASTICMODE_DELIOT_HEITZ
   - _STYLIZEDREFLECTIONMODE_UNITYCHAN
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -811,6 +814,7 @@ Material:
     - _ApplyReflection: 0
     - _ApplySpecular: 1
     - _ApplySpecularFA: 1
+    - _Aspect: 1
     - _AudioLinkAnimToggle: 1
     - _AudioLinkBandOverridesEnabled: 0
     - _AudioLinkDebugEnabled: 0
@@ -1062,6 +1066,7 @@ Material:
     - _ClothReflectance: 0.5
     - _ClothShadingWarning: 0
     - _ClothSmoothness: 0.5
+    - _ColonBlink: 1
     - _ColorGradingToggle: 0
     - _ColorMask: 15
     - _ColorThemeIndex: 0
@@ -1750,6 +1755,7 @@ Material:
     - _FaceDiscardHeader: 0
     - _FlatLightingInfo: 0
     - _FlipBackfaceNormals: 1
+    - _FlipX: 1
     - _FlipbookALColorOverrideBand: 0
     - _FlipbookALColorOverrideBand1: 0
     - _FlipbookALColorOverrideEnabled: 0
@@ -2591,6 +2597,8 @@ Material:
     - _MatcapTPSMaskStrength: 1
     - _MatcapUVMode: 1
     - _MatcapUVToBlend: 1
+    - _Message: 0
+    - _MessageWidth: 0.448
     - _Metallic: 0
     - _MetallicGlossMapUV: 0
     - _Mirror: 0
@@ -3145,6 +3153,7 @@ Material:
     - _ScrollingEmission1: 0
     - _ScrollingEmission2: 0
     - _ScrollingEmission3: 0
+    - _Seconds: 59
     - _Set_HighColorMaskChannel: 1
     - _Set_HighColorMaskUV: 0
     - _Set_Rim2LightMaskChannel: 1
@@ -3194,6 +3203,7 @@ Material:
     - _ShadowReceive: 0
     - _ShadowStrength: 1
     - _ShadowStrengthMaskUV: 0
+    - _ShowText: 1
     - _SkinThicknessMapInvert: 0
     - _SkinThicknessMapUV: 0
     - _SkinThicknessPower: 1
@@ -3292,6 +3302,7 @@ Material:
     - _TextFPSEnabled: 0
     - _TextFPSRotation: 0
     - _TextFPSUV: 0
+    - _TextHeight: 0.25
     - _TextNumericColorThemeIndex: 0
     - _TextNumericDecimalDigits: 0
     - _TextNumericEmissionStrength: 0
@@ -5179,6 +5190,7 @@ Material:
     - _TPS_PenetratorScale: {r: 1, g: 1, b: 1, a: 1}
     - _TPS_PenetratorUp: {r: 0, g: 1, b: 0, a: 0}
     - _TPS_SqueezeTypeMultiplier: {r: 1, g: 1, b: 1, a: 1}
+    - _TextColor: {r: 0.85, g: 0.95, b: 0.9, a: 1}
     - _TextFPSColor: {r: 1, g: 1, b: 1, a: 1}
     - _TextFPSOffset: {r: 0, g: 0, b: 0, a: 0}
     - _TextFPSOutlineColor: {r: 1, g: 1, b: 1, a: 1}
