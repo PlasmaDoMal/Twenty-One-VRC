@@ -27,6 +27,16 @@
 # ...exceto quando o asset correspondente está ignorado acima.
 !/[Aa]ssets/**/*.meta
 
+# --- Programas compilados (MenSharp) ---
+# Estes .asset guardam em m_Script o GUID do .cs que os define
+# (MenSharpProgramAsset.cs, dentro de Packages/). Como Packages/* é ignorado,
+# cada máquina gera GUIDs próprios para os arquivos do pacote, então o conteúdo
+# diverge sempre que o MenSharp recompila em outra máquina.
+# Mantemos o .meta — é ele que dá o GUID estável referenciado pelas cenas — e
+# deixamos o MenSharp regenerar o .asset localmente a partir do .cs.
+Assets/MenSharp/Programs/*.asset
+Assets/Scripts/Programs/*.asset
+
 # --- Soluções e projetos gerados pelo IDE ---
 *.csproj
 *.unityproj
