@@ -11,7 +11,7 @@ using VRC.SDKBase;
 ///
 /// Campos de instancia sao publicos de proposito: no MenSharp um campo privado
 /// vira estatico, e um estatico seria compartilhado pelos botoes da mesa. Ha um
-/// FadeRise por botao, entao <see cref="restPosition"/> e <see cref="running"/>
+/// FadeRise por botao, entao <see cref="restY"/> e <see cref="running"/>
 /// precisam ser um de cada.
 /// </summary>
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
@@ -31,15 +31,32 @@ public class FadeRise : MenSharpBehaviour
     [Tooltip("Comeca escondido e parado, sem esperar a vez chegar. Marque no botao que so vale depois de certa jogada.")]
     public bool startHidden = false;
 
-    [HideInInspector] public Vector3 restPosition;
+    // Publicos de proposito: no MenSharp um campo privado vira estatico, e um
+    // estatico seria compartilhado pelos botoes da mesa. Ha um FadeRise por
+    // botao, entao restY e running precisam ser um de cada.
+    //
+    // So a altura, nunca a posicao inteira: ver o Start().
+    [HideInInspector] public float restY;
     [HideInInspector] public bool running;
+    [HideInInspector] public int animationVersion;
+
+    /// <summary>Marca que o botao esta no estado escondido, para o repouso ser derivado.</summary>
+    [HideInInspector] public bool hidden;
 
     public void Start()
     {
-        // A posicao de repouso e lida uma vez, aqui. Os metodos de animacao nao
-        // releem: depois de um HideNow o objeto ja esta deslocado, e reler daria
-        // a posicao escondida como se fosse a de repouso.
-        restPosition = transform.localPosition;
+        // A posicao de repouso e derivada da altura atual mais o offset, e nao
+        // lida uma unica vez.
+        //
+        // Ler uma vez era fragil: o Start do botao e do TurnFadeIn correm em
+        // ordem indefinida, entao o HideNow podia ter deslocado o botao antes
+        // do Start dele. Aí o Hit lia 0 e ficava com repouso 0, e o Stay lia
+        // -0.06 e ficava com repouso -0.06 — os dois escondidos em alturas
+        // diferentes, e o Stay subindo de baixo de mais baixo.
+        //
+        // Derivando de "altura atual + offset", o repouso e sempre o mesmo,
+        // qualquer que seja a ordem em que as pecas acordem.
+        RefreshRestY();
         if (startHidden)
         {
             HideNow();
@@ -47,14 +64,43 @@ public class FadeRise : MenSharpBehaviour
     }
 
     /// <summary>
+    /// Recalcula a altura de repouso a partir de onde o botao esta agora.
+    /// Chame depois de mover o botao manualmente, para o proximo
+    /// <see cref="HideNow"/> usar a altura certa.
+    /// </summary>
+    public void RefreshRestY()
+    {
+        restY = transform.localPosition.y + (hidden ? offsetY : 0f);
+        hidden = false;
+    }
+
+    /// <summary>True enquanto o botao estiver no estado escondido.</summary>
+    public bool IsHidden()
+    {
+        return hidden;
+    }
+
+    /// <summary>
     /// Some com o botao na hora, sem animar. E o que <see cref="startHidden"/>
     /// chama no Start.
+    ///
+    /// Mexe so no Y, entao o botao desce para baixo de onde esta, mantendo o
+    /// lugar dele na fila.
     /// </summary>
     public void HideNow()
     {
+        bool wasRunning = running;
+        animationVersion++;
         running = false;
-        transform.localPosition = restPosition + Vector3.down * offsetY;
+        // Deriva o repouso de onde o botao esta agora, em vez de confiar no
+        // restY guardado. Se o botao ja estava escondido, a altura atual ja e
+        // o repouso; se estava visivel, o repouso e a propria altura atual.
+        // Nos dois casos o resultado e o mesmo e nao depende de ordem de Start.
+        if (!wasRunning) RefreshRestY();
+        transform.localPosition = new UnityEngine.Vector3(
+            transform.localPosition.x, restY - offsetY, transform.localPosition.z);
         SetAlpha(0f);
+        hidden = true;
     }
 
     /// <summary>
@@ -64,8 +110,9 @@ public class FadeRise : MenSharpBehaviour
     /// </summary>
     public void FadeInAndRise()
     {
-        if (running) return;
-        Scheduler.Run(() => RunIn());
+        int version = ++animationVersion;
+        running = true;
+        Scheduler.Run(() => RunIn(version));
     }
 
     /// <summary>
@@ -79,51 +126,64 @@ public class FadeRise : MenSharpBehaviour
     /// </summary>
     public void FadeOutAndDrop()
     {
-        if (running) return;
-        Scheduler.Run(() => RunOut());
+        int version = ++animationVersion;
+        running = true;
+        SetInputEnabled(false);
+        Scheduler.Run(() => RunOut(version));
     }
 
-    private async System.Threading.Tasks.Task RunIn()
+    private async System.Threading.Tasks.Task RunIn(int version)
     {
-        running = true;
-        Vector3 from = restPosition + Vector3.down * offsetY;
-        transform.localPosition = from;
-        SetAlpha(0f);
+        // X e Z ficam como estao: a animacao desloca so a altura, para o botao
+        // subir no lugar, sem andar de lado nem para frente.
+        float from = transform.localPosition.y;
+        float alpha = CurrentAlpha();
+        await Drive(from, restY, alpha, 1f, version);
+        if (version != animationVersion) return;
 
-        await Drive(from, restPosition, 0f, 1f);
-
-        transform.localPosition = restPosition;
+        transform.localPosition = new UnityEngine.Vector3(transform.localPosition.x, restY, transform.localPosition.z);
         SetAlpha(1f);
+        hidden = false;
         running = false;
     }
 
-    private async System.Threading.Tasks.Task RunOut()
+    private async System.Threading.Tasks.Task RunOut(int version)
     {
-        running = true;
+        await Drive(transform.localPosition.y, restY - offsetY, CurrentAlpha(), 0f, version);
+        if (version != animationVersion) return;
 
-        await Drive(restPosition, restPosition + Vector3.down * offsetY, 1f, 0f);
-
-        transform.localPosition = restPosition + Vector3.down * offsetY;
+        transform.localPosition = new UnityEngine.Vector3(transform.localPosition.x, restY - offsetY, transform.localPosition.z);
         SetAlpha(0f);
+        hidden = true;
         running = false;
+    }
+
+    private float CurrentAlpha()
+    {
+        if (canvasGroups != null && canvasGroups.Length > 0 && canvasGroups[0] != null)
+            return canvasGroups[0].alpha;
+        return hidden ? 0f : 1f;
     }
 
     /// <summary>
-    /// Anda de <paramref name="from"/> ate <paramref name="to"/> enquanto
-    /// <paramref name="alphaFrom"/> vira <paramref name="alphaTo"/>, no mesmo
-    /// relogio e na mesma curva. Compartilhado pelos dois sentidos, para o
+    /// Leva a altura de <paramref name="fromY"/> ate <paramref name="toY"/>
+    /// enquanto <paramref name="alphaFrom"/> vira <paramref name="alphaTo"/>, no
+    /// mesmo relogio e na mesma curva. Compartilhado pelos dois sentidos, para o
     /// fade in e o fade out sao sempre simetricos.
     /// </summary>
-    private async System.Threading.Tasks.Task Drive(Vector3 from, Vector3 to, float alphaFrom, float alphaTo)
+    private async System.Threading.Tasks.Task Drive(float fromY, float toY, float alphaFrom, float alphaTo, int version)
     {
         float elapsed = 0f;
-        while (elapsed < duration)
+        while (elapsed < duration && version == animationVersion)
         {
             elapsed += Time.deltaTime;
             float t = Mathf.Clamp01(elapsed / Mathf.Max(0.001f, duration));
             float e = curve.Evaluate(t);
             if (Mathf.Abs(smoothness - 1f) > 0.001f) e = Mathf.Pow(e, smoothness);
-            transform.localPosition = Vector3.LerpUnclamped(from, to, e);
+            transform.localPosition = new UnityEngine.Vector3(
+                transform.localPosition.x,
+                Mathf.LerpUnclamped(fromY, toY, e),
+                transform.localPosition.z);
             SetAlpha(Mathf.LerpUnclamped(alphaFrom, alphaTo, e));
             await Scheduler.NextFrame();
         }
@@ -133,6 +193,22 @@ public class FadeRise : MenSharpBehaviour
     {
         if (canvasGroups == null) return;
         for (int i = 0; i < canvasGroups.Length; i++)
-            if (canvasGroups[i] != null) canvasGroups[i].alpha = value;
+            if (canvasGroups[i] != null)
+            {
+                canvasGroups[i].alpha = value;
+                canvasGroups[i].interactable = value >= 0.999f;
+                canvasGroups[i].blocksRaycasts = value >= 0.999f;
+            }
+    }
+
+    private void SetInputEnabled(bool enabled)
+    {
+        if (canvasGroups == null) return;
+        for (int i = 0; i < canvasGroups.Length; i++)
+            if (canvasGroups[i] != null)
+            {
+                canvasGroups[i].interactable = enabled;
+                canvasGroups[i].blocksRaycasts = enabled;
+            }
     }
 }

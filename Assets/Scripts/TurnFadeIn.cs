@@ -3,15 +3,11 @@ using UnityEngine;
 using VRC.SDKBase;
 
 /// <summary>
-/// Reage a virada de vez do <see cref="CardDealer"/> tocando o
+/// Reage a virada de vez do <see cref="CardDealer"/>, tocando o
 /// <see cref="FadeRise"/> dos botoes.
 ///
-/// Este script nao observa nada: quem avisa e o dono do baralho, pelo
-/// <see cref="CardDealer.NotifyTurnChanged"/>, chamado em todo ponto onde a vez
-/// pode mudar. Antes ele conferia o turno a cada quadro, o que e desperdicio —
-/// e pior, repartia a animacao entre "chegou a vez" e "o turno ainda era o de
-/// outro" numa rajada de quadros, com o botao piscando. Com o evento, a
-/// animacao toca uma vez, no instante certo.
+/// Este script nao observa nada: quem avisa e o dono do baralho. O aviso chega
+/// por <see cref="ApplyTurn"/>, que tem de ser sem parametros — ver o metodo.
 ///
 /// Quem decide continua sendo a mesa: <c>turnIndex</c> e sincronizado e so o
 /// dono do baralho escreve nele, e a jogada so chega pelo
@@ -26,11 +22,16 @@ using VRC.SDKBase;
 public class TurnFadeIn : MenSharpBehaviour
 {
     [Header("Turn source")]
-    [Tooltip("O dono do baralho, que dispara OnTurnChanged.")]
+    [Tooltip("O dono do baralho, que chama ApplyTurn.")]
     public CardDealer dealer;
 
     [Tooltip("De qual jogador e este menu. 0 = primeiro a entrar, 1 = segundo.")]
     public int playerIndex = 0;
+
+    [Header("Ultimo estado recebido do dono da mesa")]
+    [Tooltip("Preenchido pelo CardDealer antes de chamar ApplyTurn.")]
+    [HideInInspector] public bool incomingActionable;
+    [HideInInspector] public int incomingTurnPlayer;
 
     [Header("Targets")]
     [Tooltip("Botoes que tocam a animacao quando a vez chega.")]
@@ -66,6 +67,13 @@ public class TurnFadeIn : MenSharpBehaviour
     private async System.Threading.Tasks.Task HideUntilTurn()
     {
         await Scheduler.DelayFrames(1);
+        // O aviso pode chegar antes deste primeiro frame. Nao esconda uma vez
+        // que ja ficou jogavel; o fade em andamento pertence ao turno atual.
+        if (lastWasActionable || (dealer != null && dealer.TurnIsActionable()
+            && dealer.turnIndex == playerIndex))
+        {
+            return;
+        }
         if (hiddenUntilTurn == null)
         {
             return;
@@ -80,20 +88,20 @@ public class TurnFadeIn : MenSharpBehaviour
     }
 
     /// <summary>
-    /// Chamado pelo <see cref="CardDealer.NotifyTurnChanged"/>. E o unico ponto
-    /// de entrada: nada aqui roda por quadro.
+    /// Aplica o estado de turno mais recente. E o unico evento que o
+    /// <see cref="CardDealer"/> consegue chamar.
+    ///
+    /// Tem de ser sem parametros: o Udon so expoe como evento os metodos sem
+    /// argumentos, e o <c>SendCustomEvent</c> leva so o nome. Com uma assinatura
+    /// <c>OnTurnChanged(bool, int)</c> o metodo nem era exportado e a chamada
+    /// do CardDealer nao existia no programa — o log mostrava a mesa avisando a
+    /// vez e nenhum menu recebia. Por isso o estado vem em dois campos
+    /// (<see cref="incomingActionable"/> e <see cref="incomingTurnPlayer"/>) e
+    /// este metodo so aplica.
     /// </summary>
-    /// <param name="actionable">False quando nao ha jogada para fazer — partida
-    /// nao comecada, abertura ainda nao saiu, cartas voando ou partida acabada.
-    /// O menu fica escondido.</param>
-    /// <param name="turnPlayer">De quem e a vez, ou -1 quando
-    /// <paramref name="actionable"/> e false.</param>
-    public void OnTurnChanged(bool actionable, int turnPlayer)
+    public void ApplyTurn()
     {
-        // A mesa so avisa quando o estado muda, mas por seguranca: uma animacao
-        // repetida no mesmo estado mostraria o botao no meio da partida sem a
-        // vez ter virado.
-        bool mine = actionable && turnPlayer == playerIndex;
+        bool mine = incomingActionable && incomingTurnPlayer == playerIndex;
         if (mine == lastWasActionable)
         {
             return;

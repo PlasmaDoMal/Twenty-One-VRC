@@ -117,7 +117,7 @@ public class LogoIntroAnimator : MenSharpBehaviour
         playRoot.anchoredPosition=new Vector2(px-1280f,540f-playTop-playHeight*0.5f);
         playGroup.alpha=t>=menuStart ? 1f : 0f;
         float selected=(alwaysSelected || hovered) && t>=interactiveTime ? indicatorOpacity : 0f;
-        indicator.color=new Color(1f,1f,1f,selected);
+        if (indicator != null) indicator.color = new Color(1f, 1f, 1f, selected);
     }
 
     private void SetLogoPose(RawImage image,float t,float opacity)
@@ -135,6 +135,6 @@ public class LogoIntroAnimator : MenSharpBehaviour
     {
         running=false;
         readyForPlay=false;
-        indicator.color=new Color(1f,1f,1f,0f);
+        if (indicator != null) indicator.color = new Color(1f, 1f, 1f, 0f);
     }
 }

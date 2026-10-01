@@ -36,20 +36,20 @@ public class ChoiceButton : MenSharpBehaviour
     [HideInInspector] public bool busy;
 
     /// <summary>Compra uma carta.</summary>
-    public void ChooseHit()
+public void ChooseHit()
     {
-        if (busy) return;
+        if (busy || dealer == null || !dealer.CanLocalPlayerAct()) return;
         busy = true;
-        if (dealer != null) dealer.RequestHit();
+        dealer.RequestHit();
         Hide();
     }
 
     /// <summary>Fica com o que tem.</summary>
-    public void ChooseStay()
+public void ChooseStay()
     {
-        if (busy) return;
+        if (busy || dealer == null || !dealer.CanLocalPlayerAct()) return;
         busy = true;
-        if (dealer != null) dealer.RequestStay();
+        dealer.RequestStay();
         Hide();
     }
 

@@ -297,6 +297,17 @@ public class CardDealer : MenSharpBehaviour
     {
         bool actionable = TurnIsActionable();
         int player = actionable ? turnIndex : -1;
+        // O log vem antes da deduplicacao de proposito: e o unico registro de
+        // que o portao foi avaliado. Depois do return, um estado que nao mudou
+        // nao deixa rastro, e nao da para distinguir "avaliado e ja estava
+        // certo" de "nunca chegou a avaliar".
+        if (logTurnEvents)
+        {
+            Debug.Log("CardDealer: TurnIsActionable=" + actionable + " (matchStarted=" + matchStarted
+                + ", matchOver=" + matchOver + ", openingDealt=" + openingDealt
+                + ", dealing=" + dealing + ", pendingFly=" + pendingFly.Count
+                + ", turno=" + turnIndex + ")");
+        }
         if (actionable == turnEventActionable && player == turnEventPlayer)
         {
             return;
@@ -314,10 +325,18 @@ public class CardDealer : MenSharpBehaviour
         }
         for (int i = 0; i < turnListeners.Length; i++)
         {
-            if (turnListeners[i] != null)
+            TurnFadeIn listener = turnListeners[i];
+            if (listener == null)
             {
-                turnListeners[i].OnTurnChanged(actionable, player);
+                continue;
             }
+            // Chamada direta, nao SendCustomEvent: o Udon so exporta como evento
+            // os metodos sem argumentos, e um OnTurnChanged(bool, int) nunca
+            // chegaria ao menu. O estado vai em dois campos e o ApplyTurn(), sem
+            // parametros, so aplica.
+            listener.incomingActionable = actionable;
+            listener.incomingTurnPlayer = player;
+            listener.ApplyTurn();
         }
     }
 
@@ -578,7 +597,11 @@ public class CardDealer : MenSharpBehaviour
             return;
         }
 
-        NewSeed();
+        if (!NewSeed())
+        {
+            EndMatch(-1);
+            return;
+        }
         EnsureLogBuffers();
         logCount = 0;
         logApplied = 0;
@@ -616,6 +639,11 @@ public class CardDealer : MenSharpBehaviour
         }
         RequestSerialization();
         ResetTurnDeadline();
+        // A rodada abriu e a vez foi definida. O evento vai aqui e nao so no fim
+        // do voo das cartas porque TurnIsActionable ainda e false neste momento
+        // (openingDealt acaba de virar, o baralho pode ainda estar saindo), e
+        // quem fecha o portao e o DrainQueue.
+        NotifyTurnChanged();
     }
 
     /// <summary>
@@ -711,7 +739,16 @@ public class CardDealer : MenSharpBehaviour
         }
         if (!matchStarted)
         {
-            return slots != null && slots.Length > 0 && slots[0] != null && slots[0].IsMine();
+            // Antes da primeira jogada vale o dono do baralho, e nao o dono do
+            // Slot 0.
+            //
+            // A Razão e a posse: os Slots pertencem ao master ate
+            // <see cref="AssignSlots"/> rodar, e AssignSlots só roda dentro de
+            // <see cref="StartMatch"/>. Se o teste fosse slots[0].IsMine(),
+            // nenhum jogador passaria — o Slot 0 é do master, o master não
+            // pode iniciar porque não é dono de si mesmo no Slot, e a partida
+            // nunca começaria. O dono do baralho é sempre alguém.
+            return IsDeckOwner();
         }
         return local.playerId == matchStarterPlayerId;
     }
@@ -720,6 +757,10 @@ public class CardDealer : MenSharpBehaviour
     {
         if (!IsReady())
         {
+            if (logTurns)
+            {
+                Debug.Log("CardDealer: a mesa ainda nao esta pronta (IsReady false).");
+            }
             return false;
         }
         if (slots == null || slots.Length < HandCount() || HandCount() != 2)
@@ -754,6 +795,13 @@ public class CardDealer : MenSharpBehaviour
                 Debug.Log("CardDealer: aguardando os dois jogadores para iniciar a partida.");
             }
             return false;
+        }
+        if (logTurns)
+        {
+            // A partida vai comecar. Este log e o que distingue "recusado" de
+            // "nao chegou a tentar": sem ele, uma partida que nao sobe nao deixa
+            // rastro nenhum no console.
+            Debug.Log("CardDealer: MatchCanStart aprovado, a partida pode comecar.");
         }
         return true;
     }
@@ -797,8 +845,20 @@ public class CardDealer : MenSharpBehaviour
         {
             return;
         }
-        // GetPlayers segue a ordem de entrada, que e a ordem da mesa
+        // Usa a mesma ordem de playerId que OwnerOnlyUIVisibility. Assim o
+        // menu visivel e sempre o do Slot que recebe a jogada.
         VRCPlayerApi[] online = VRCPlayerApi.GetPlayers();
+        for (int i = 1; i < online.Length; i++)
+        {
+            VRCPlayerApi key = online[i];
+            int j = i - 1;
+            while (j >= 0 && online[j].playerId > key.playerId)
+            {
+                online[j + 1] = online[j];
+                j--;
+            }
+            online[j + 1] = key;
+        }
         VRCPlayerApi[] players = new VRCPlayerApi[slots.Length];
         int count = 0;
         for (int i = 0; i < online.Length && count < slots.Length; i++)
@@ -926,9 +986,50 @@ public class CardDealer : MenSharpBehaviour
     /// Sorteia a semente da rodada. So quem tem o baralho faz isso; o resto
     /// recebe pelo <see cref="OnDeserialization"/>.
     /// </summary>
-    private void NewSeed()
+    private bool NewSeed()
     {
-        deckSeed = Random.Range(1, int.MaxValue);
+        // A semente e a unica coisa que precisa viajar pela rede. Antes de
+        // distribuir, experimenta baralhos deterministas ate que nenhuma mao
+        // de abertura comece estourada.
+        bool previousLogDeals = logDeals;
+        logDeals = false;
+        int attempts = shuffleDeck ? 4096 : 1;
+        int limit = Mathf.Min(21, targetScore);
+        for (int attempt = 0; attempt < attempts; attempt++)
+        {
+            deckSeed = Random.Range(1, int.MaxValue);
+            SeedRandom(deckSeed);
+            BuildDeck();
+            int[] totals = new int[HandCount()];
+            int count = Mathf.Min(openingCards, deck.Length);
+            for (int i = 0; i < count; i++)
+            {
+                totals[i % totals.Length] += deck[i];
+            }
+            bool safe = true;
+            for (int i = 0; i < totals.Length; i++)
+            {
+                if (totals[i] > limit)
+                {
+                    safe = false;
+                    break;
+                }
+            }
+            if (safe)
+            {
+                logDeals = previousLogDeals;
+                if (logTurns && attempt > 0)
+                {
+                    Debug.Log("CardDealer: abertura segura encontrada apos " + (attempt + 1)
+                        + " embaralhamentos.");
+                }
+                return true;
+            }
+        }
+        logDeals = previousLogDeals;
+        Debug.LogError("CardDealer: nao foi possivel formar uma abertura sem estourar "
+            + limit + " pontos; a rodada nao sera distribuida.");
+        return false;
     }
 
     /// <summary>
@@ -1613,38 +1714,28 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public void RequestHit()
     {
-        if (!matchStarted)
-        {
-            return;
-        }
-        int index = MySlotIndex();
-        if (index < 0)
+        if (!CanLocalPlayerAct())
         {
             if (logTurns)
             {
-                Debug.Log("CardDealer: hit pedido sem Slot do jogador local.");
+                Debug.Log("CardDealer: hit ignorado, o jogador local nao pode agir nesta vez.");
             }
             return;
         }
-        slots[index].RequestHit();
+        slots[turnIndex].RequestHit();
     }
 
     public void RequestStay()
     {
-        if (!matchStarted)
-        {
-            return;
-        }
-        int index = MySlotIndex();
-        if (index < 0)
+        if (!CanLocalPlayerAct())
         {
             if (logTurns)
             {
-                Debug.Log("CardDealer: stay pedido sem Slot do jogador local.");
+                Debug.Log("CardDealer: stay ignorado, o jogador local nao pode agir nesta vez.");
             }
             return;
         }
-        slots[index].RequestStay();
+        slots[turnIndex].RequestStay();
     }
 
     /// <summary>
@@ -2146,5 +2237,17 @@ public class CardDealer : MenSharpBehaviour
             }
         }
         return true;
+    }
+
+
+    public bool CanLocalPlayerAct()
+    {
+        if (!TurnIsActionable())
+        {
+            return false;
+        }
+        int index = MySlotIndex();
+        return index >= 0 && index == turnIndex && slots[index] != null
+            && slots[index].HasPlayer();
     }
 }
