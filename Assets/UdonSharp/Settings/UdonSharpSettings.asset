@@ -19,6 +19,7 @@ MonoBehaviour:
   scanningDirectoryBlacklist:
   - Assets/MenSharp/
   - Assets/Scripts/
+  - Assets/IntroMenuVRChat/Scripts/
   defaultBehaviourInterfaceType: 
   buildDebugInfo: 1
   includeInlineCode: 1

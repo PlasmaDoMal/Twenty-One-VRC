@@ -1,10 +1,11 @@
-using UdonSharp;
+using System.Threading.Tasks;
+using MenSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDKBase;
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-public class IntroMenuController : UdonSharpBehaviour
+public class IntroMenuController : MenSharpBehaviour
 {
     public Transform introSpawn;
     public Transform warehouseSpawn;
@@ -45,7 +46,7 @@ public class IntroMenuController : UdonSharpBehaviour
     private bool initialized;
     private bool respawnPending;
 
-    private void Start()
+    public void Start()
     {
         fadeMaterial = fadeRenderer.material;
         SetFade(0f);
@@ -53,9 +54,19 @@ public class IntroMenuController : UdonSharpBehaviour
         blackoutRoot.SetActive(useFullscreenBackdrop);
         playButton.interactable = false;
         if (menuGroup != null) menuGroup.alpha = logoAnimator != null ? 1f : 0f;
+        Scheduler.Run(() => RunMenu());
     }
 
-    private void Update()
+    private async Task RunMenu()
+    {
+        while (true)
+        {
+            TickMenu();
+            await Scheduler.NextFrame();
+        }
+    }
+
+    private void TickMenu()
     {
         if (!initialized)
         {
@@ -102,7 +113,7 @@ public class IntroMenuController : UdonSharpBehaviour
             {
                 state = 3;
                 elapsed = 0f;
-                SendCustomEventDelayedFrames(nameof(TeleportUnderBlack), 1);
+                Scheduler.Run(() => TeleportAfterFrame());
             }
         }
         else if (state == 4)
@@ -171,19 +182,19 @@ public class IntroMenuController : UdonSharpBehaviour
         if (logoAnimator != null) logoAnimator.HoverOff();
         else if (selectionIndicator != null) selectionIndicator.SetActive(false);
     }
-    public override void OnPlayerRespawn(VRCPlayerApi player)
+    public void OnPlayerRespawn(VRCPlayerApi player)
     {
         if (!Utilities.IsValid(player) || !player.isLocal || !initialized) return;
         if (introCompleted)
         {
             // Defer beyond the SDK respawn operation; never reopen the intro.
             respawnPending = true;
-            SendCustomEventDelayedFrames(nameof(RedirectRespawn), 1);
+            Scheduler.Run(() => RedirectAfterFrame());
         }
         else
         {
             if (immobilizePlayer) { player.Immobilize(true); movementLocked = true; }
-            SendCustomEventDelayedFrames(nameof(AlignMenu), 1);
+            Scheduler.Run(() => AlignAfterFrame());
         }
     }
     public void RedirectRespawn()
@@ -192,6 +203,21 @@ public class IntroMenuController : UdonSharpBehaviour
         respawnPending = false;
         if (state == 1 || state == 2 || state == 3) return;
         if (warehouseSpawn != null) localPlayer.TeleportTo(warehouseSpawn.position, warehouseSpawn.rotation);
+    }
+    private async Task TeleportAfterFrame()
+    {
+        await Scheduler.DelayFrames(1);
+        TeleportUnderBlack();
+    }
+    private async Task RedirectAfterFrame()
+    {
+        await Scheduler.DelayFrames(1);
+        RedirectRespawn();
+    }
+    private async Task AlignAfterFrame()
+    {
+        await Scheduler.DelayFrames(1);
+        AlignMenu();
     }
     public void AlignMenu()
     {
@@ -207,7 +233,7 @@ public class IntroMenuController : UdonSharpBehaviour
         Quaternion yaw = Quaternion.Euler(0f, menuYaw, 0f);
         introMenuRoot.transform.SetPositionAndRotation(head + yaw * Vector3.forward * menuDistance, yaw);
     }
-    public override void PostLateUpdate()
+    public void PostLateUpdate()
     {
         if (!initialized || state == 5 || !Utilities.IsValid(localPlayer)) return;
         Vector3 head = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
@@ -232,7 +258,7 @@ public class IntroMenuController : UdonSharpBehaviour
     {
         if (fadeMaterial != null) fadeMaterial.SetFloat("_Alpha", alpha);
     }
-    private void OnDisable()
+    public void OnDisable()
     {
         if (initialized && Utilities.IsValid(localPlayer) && movementLocked)
             localPlayer.Immobilize(false);

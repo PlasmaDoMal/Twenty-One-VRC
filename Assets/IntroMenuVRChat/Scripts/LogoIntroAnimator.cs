@@ -1,9 +1,10 @@
-using UdonSharp;
+using System.Threading.Tasks;
+using MenSharp;
 using UnityEngine;
 using UnityEngine.UI;
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-public class LogoIntroAnimator : UdonSharpBehaviour
+public class LogoIntroAnimator : MenSharpBehaviour
 {
     [Header("Reference timeline (seconds from local entry)")]
     public float loadingStart = 2.266667f;
@@ -58,7 +59,21 @@ public class LogoIntroAnimator : UdonSharpBehaviour
         Sample(0f);
     }
 
-    private void Update()
+    public void Start()
+    {
+        Scheduler.Run(() => RunAnimation());
+    }
+
+    private async Task RunAnimation()
+    {
+        while (true)
+        {
+            TickAnimation();
+            await Scheduler.NextFrame();
+        }
+    }
+
+    private void TickAnimation()
     {
         if (!running) return;
         currentTime += Time.deltaTime * Mathf.Max(0.1f, playbackSpeed);

@@ -4,10 +4,10 @@ using UnityEngine.EventSystems;
 using UnityEditor;
 using UnityEditor.Events;
 using UnityEditor.SceneManagement;
-using UdonSharpEditor;
 using VRC.SDK3.Components;
 using VRC.Udon;
 using System.IO;
+using System.Collections.Generic;
 
 public static class IntroMenuSetup
 {
@@ -21,13 +21,6 @@ public static class IntroMenuSetup
     foreach (string folder in new[]{"Materials","UI","Prefabs","Backups"}) Directory.CreateDirectory(Root+"/"+folder);
     AssetDatabase.Refresh();
     // Preserve the complete pre-install scene, including unsaved user edits.
-    var program=AssetDatabase.LoadAssetAtPath<UdonSharp.UdonSharpProgramAsset>(Root+"/Scripts/IntroMenuController.asset");
-    if(program==null){
-        program=ScriptableObject.CreateInstance<UdonSharp.UdonSharpProgramAsset>();
-        program.sourceCsScript=AssetDatabase.LoadAssetAtPath<MonoScript>(Root+"/Scripts/IntroMenuController.cs");
-        AssetDatabase.CreateAsset(program,Root+"/Scripts/IntroMenuController.asset");
-        UdonSharp.UdonSharpProgramAsset.CompileAllCsPrograms(true);
-    }
     EditorSceneManager.SaveScene(scene,Root+"/Backups/Menu_BeforeIntro.unity",true);
     GameObject root = new GameObject("IntroSystem");
     Undo.RegisterCreatedObjectUndo(root,"Create Intro System");
@@ -35,7 +28,7 @@ public static class IntroMenuSetup
     spawn.position = new Vector3(0,0.2f,-30);
     Transform destination = Child("WarehouseSpawnPlaceholder",root.transform).transform;
     destination.position = new Vector3(0,0.15f,12);
-    var controller = UdonSharpComponentExtensions.AddUdonSharpComponent<IntroMenuController>(Child("IntroMenuController",root.transform));
+    var controller = Child("IntroMenuController",root.transform).AddComponent<IntroMenuController>();
     controller.introSpawn=spawn; controller.warehouseSpawn=destination;
     GameObject menu = Child("IntroMenuRoot",root.transform);
     menu.transform.position=spawn.position+new Vector3(0,1.6f,2);
@@ -86,7 +79,8 @@ public static class IntroMenuSetup
     var dotRect=dot.GetComponent<RectTransform>();dotRect.anchorMin=dotRect.anchorMax=new Vector2(0,0.5f);dotRect.anchoredPosition=new Vector2(0,0);dotRect.sizeDelta=new Vector2(16,16);
     var dotImage=dot.GetComponent<Image>();dotImage.sprite=AssetDatabase.LoadAssetAtPath<Sprite>(Root+"/UI/SelectionDot.png");dotImage.material=uiMat;dotImage.raycastTarget=false;
     controller.selectionIndicator=dot;dot.SetActive(false);
-    var udon=UdonSharpEditorUtility.GetBackingUdonBehaviour(controller);
+    MenSharpProxy.SyncThenTransfer(new List<GameObject>{controller.gameObject},false);
+    var udon=controller.GetComponent<UdonBehaviour>();
     UnityEventTools.AddStringPersistentListener(button.onClick,udon.SendCustomEvent,"Play");
     var trigger=buttonObject.AddComponent<EventTrigger>();
     AddEvent(trigger,EventTriggerType.PointerEnter,udon,"PlayHover");AddEvent(trigger,EventTriggerType.PointerExit,udon,"PlayExit");
@@ -116,7 +110,7 @@ public static class IntroMenuSetup
     Undo.RecordObject(descriptor,"Set Intro Spawn");
     descriptor.spawns=new[]{spawn};EditorUtility.SetDirty(descriptor);
     EditorUtility.SetDirty(controller);
-    UdonSharpEditorUtility.CopyProxyToUdon(controller);
+    MenSharpProxy.SyncThenTransfer(new List<GameObject>{controller.gameObject},false);
     PrefabUtility.SaveAsPrefabAsset(root,Root+"/Prefabs/IntroSystem.prefab");
     AssetDatabase.SaveAssets();
     EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);

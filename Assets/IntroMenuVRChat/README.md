@@ -1,8 +1,24 @@
 # Menu inicial VRChat — Twenty One
 
-Implementado via MCP do Unity em D:/Avatares/Twenty One, cena Assets/Scenes/Menu.unity.
-Unity 2022.3.22f1; VRCSDK Worlds 3.10.5 e UdonSharp do pacote instalado.
-Cena salva; Editor deixado fora do Play Mode.
+Cena `Assets/Scenes/Menu.unity`, Unity 2022.3.22f1, VRCSDK Worlds e MenSharp.
+
+## Migração para MenSharp
+
+`IntroMenuController` e `LogoIntroAnimator` herdam de `MenSharpBehaviour`.
+A pasta `Scripts` está marcada com `.mensharp`; os programas ficam em
+`Scripts/Programs`. Os programas UdonSharp antigos foram removidos.
+O botão e os eventos de hover da cena e do prefab apontam para o programa
+MenSharp do controlador. Os UdonBehaviours gerados continuam necessários
+para executar MenSharp no VRChat e ficam ocultos pelo editor MenSharp.
+
+A atualização por quadro e os adiamentos usam `Scheduler`. O acompanhamento
+do fade usa `PostLateUpdate`. Para forçar a atualização do programa serializado
+após uma migração, use `MenSharp > Rebuild All Programs`.
+As ferramentas de validação leem os UdonBehaviours em execução porque os
+componentes de autoria MenSharp são removidos antes do ClientSim.
+
+Os relatos abaixo documentam a montagem original. Os arquivos de `Backups`
+são cópias históricas anteriores à migração.
 
 ## Objetos criados
 
@@ -16,7 +32,7 @@ IntroSystem
 - BlackBackdrop: blackout local de tela inteira.
 - FadeSystem / FadeVisual: fade local independente.
 - IntroSafetyFloor: collider de apoio invisível para a área inicial.
-- IntroMenuController: comportamento UdonSharp e três AudioSources filhos:
+- IntroMenuController: comportamento MenSharp e três AudioSources filhos:
   PlayHover, PlayClick, TransitionWhoosh, todos sem clipes e sem playOnAwake.
 - TEMP_WarehouseTest: TestFloor, TestWall e TestLight. Pode ser removido após preparar o destino real.
 
@@ -28,7 +44,7 @@ O blackout e o fade estão ocultos apenas na Scene View pelo recurso de visibili
 
 Todos os assets ficam em Assets/IntroMenuVRChat/:
 - Scripts/IntroMenuController.cs: lógica local, estados, imobilização, áudio opcional, teleporte e respawn.
-- Scripts/IntroMenuController.asset: programa UdonSharp.
+- Scripts/Programs/IntroMenuController.asset e LogoIntroAnimator.asset: programas MenSharp.
 - Editor/IntroMenuSetup.cs: montagem pelo menu Tools > Intro Menu VRChat > Create System; recusa duplicar IntroSystem.
 - Editor/IntroMenuValidation.cs: verificação automatizada somente no Editor.
 - Materials/LocalBlackout.shader e MenuTypography.shader, materiais do blackout, fade, tipografia e área temporária.

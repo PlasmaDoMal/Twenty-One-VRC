@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
-using UdonSharpEditor;
+using System.Collections.Generic;
 
 public static class ReferenceMenuSetup
 {
@@ -20,14 +20,7 @@ public static class ReferenceMenuSetup
     if(controller==null)throw new InvalidOperationException("Install the intro system first.");
     var canvas=controller.introMenuRoot.GetComponentInChildren<Canvas>(true);
     if(canvas.transform.Find("LogoTrails")!=null)throw new InvalidOperationException("Reference UI already installed.");
-    var program=AssetDatabase.LoadAssetAtPath<UdonSharp.UdonSharpProgramAsset>(Root+"/Scripts/LogoIntroAnimator.asset");
-    if(program==null){
-        program=ScriptableObject.CreateInstance<UdonSharp.UdonSharpProgramAsset>();
-        program.sourceCsScript=AssetDatabase.LoadAssetAtPath<MonoScript>(Root+"/Scripts/LogoIntroAnimator.cs");
-        AssetDatabase.CreateAsset(program,Root+"/Scripts/LogoIntroAnimator.asset");
-        UdonSharp.UdonSharpProgramAsset.CompileAllCsPrograms(true);
-    }
-    var anim=UdonSharpComponentExtensions.AddUdonSharpComponent<LogoIntroAnimator>(controller.gameObject);
+    var anim=controller.gameObject.AddComponent<LogoIntroAnimator>();
     var motion=JsonUtility.FromJson<Motion>(File.ReadAllText(Root+"/UI/ReferenceMotion.json"));
     anim.logoX=Curve(motion,0);anim.logoY=Curve(motion,1);anim.logoScale=Curve(motion,2);
     var keys=new Keyframe[motion.menu.Length];
@@ -78,7 +71,7 @@ public static class ReferenceMenuSetup
     controller.playButton.interactable=false;
     anim.Sample(0f);
     EditorUtility.SetDirty(anim);EditorUtility.SetDirty(controller);
-    UdonSharpEditorUtility.CopyProxyToUdon(anim);UdonSharpEditorUtility.CopyProxyToUdon(controller);
+    MenSharpProxy.SyncThenTransfer(new List<GameObject>{controller.gameObject},false);
     PrefabUtility.SaveAsPrefabAsset(GameObject.Find("IntroSystem"),Root+"/Prefabs/IntroSystem.prefab");
     AssetDatabase.SaveAssets();EditorSceneManager.MarkSceneDirty(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
     EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());

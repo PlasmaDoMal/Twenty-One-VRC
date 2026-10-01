@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEditor;
-using UdonSharpEditor;
 using VRC.SDKBase;
 using VRC.SDK3.ClientSim;
 using VRC.Udon;
@@ -9,7 +8,7 @@ using System.IO;
 
 public static class IntroMenuValidation
 {
- static IntroMenuController c;
+ static UdonBehaviour c;
  static UdonBehaviour u;
  static VRCPlayerApi p;
  static float start, completeAt;
@@ -20,20 +19,20 @@ public static class IntroMenuValidation
  public static string LastReport = "Not run";
  public static void Begin()
  {
-    c=Object.FindObjectOfType<IntroMenuController>();
-    u=UdonSharpEditorUtility.GetBackingUdonBehaviour(c);p=Networking.LocalPlayer;
-    if(!EditorApplication.isPlaying || p==null || !c.playButton.interactable) throw new System.InvalidOperationException("Start a fresh ClientSim session and wait for initialization.");
+    c=IntroMenuEditorUtility.FindProgram("IntroMenuController");
+    u=c;p=Networking.LocalPlayer;
+    if(!EditorApplication.isPlaying || p==null || !IntroMenuEditorUtility.Read<UnityEngine.UI.Button>(c,"playButton").interactable) throw new System.InvalidOperationException("Start a fresh ClientSim session and wait for initialization.");
     checks=new List<string>();failures=new List<string>();transitions=new List<string>();
     Check((int)u.GetProgramVariable("state")==0,"Waiting for play");
-    Check(c.introMenuRoot.activeSelf && c.blackoutRoot.activeSelf==c.useFullscreenBackdrop,"Menu active and backdrop matches room mode");
-    Check(ClientSimExtensions.GetClientSimPlayer(p).locomotionData.GetImmobilized()==c.immobilizePlayer,"Initial movement matches free-walk configuration");
+    Check(IntroMenuEditorUtility.Read<GameObject>(c,"introMenuRoot").activeSelf && IntroMenuEditorUtility.Read<GameObject>(c,"blackoutRoot").activeSelf==IntroMenuEditorUtility.Read<bool>(c,"useFullscreenBackdrop"),"Menu active and backdrop matches room mode");
+    Check(ClientSimExtensions.GetClientSimPlayer(p).locomotionData.GetImmobilized()==IntroMenuEditorUtility.Read<bool>(c,"immobilizePlayer"),"Initial movement matches free-walk configuration");
     Check(u.SyncMethod==Networking.SyncType.None,"Udon sync mode None");
     start=Time.time;initial=p.GetPosition();previous=-1;lastFrame=-1;completeAt=-1;
     teleported=false;blackSeen=false;respawnRequested=false;running=true;
-    c.playButton.onClick.Invoke();
-    Check(!c.playButton.interactable,"Button disabled immediately");
+    IntroMenuEditorUtility.Read<UnityEngine.UI.Button>(c,"playButton").onClick.Invoke();
+    Check(!IntroMenuEditorUtility.Read<UnityEngine.UI.Button>(c,"playButton").interactable,"Button disabled immediately");
     Check((int)u.GetProgramVariable("state")==1,"Button event starts fade");
-    c.playButton.onClick.Invoke();
+    IntroMenuEditorUtility.Read<UnityEngine.UI.Button>(c,"playButton").onClick.Invoke();
     Check((int)u.GetProgramVariable("state")==1,"Second click does not restart or skip fade");
     EditorApplication.update-=Tick;EditorApplication.update+=Tick;
  }
@@ -44,7 +43,7 @@ public static class IntroMenuValidation
     if(!EditorApplication.isPlaying || c==null){Finish("Interrupted");return;}
     if(lastFrame==Time.frameCount)return;lastFrame=Time.frameCount;
     int state=(int)u.GetProgramVariable("state");
-    float alpha=c.fadeRenderer.material.GetFloat("_Alpha");
+    float alpha=IntroMenuEditorUtility.Read<Renderer>(c,"fadeRenderer").material.GetFloat("_Alpha");
     if(state!=previous){transitions.Add((Time.time-start).ToString("F3")+"s: state="+state+" alpha="+alpha.ToString("F3"));previous=state;}
     if((state==2 || state==3) && alpha==1f)blackSeen=true;
     if(state==2 && !checks.Contains("Rendered frame is completely black"))
@@ -65,25 +64,25 @@ public static class IntroMenuValidation
     if(!teleported && Vector3.Distance(p.GetPosition(),initial)>2f)
     {
         teleported=true;Check(blackSeen && alpha==1f,"Teleport observed only after full black, with alpha exactly 1");
-        Check(!c.introMenuRoot.activeSelf && !c.blackoutRoot.activeSelf,"Menu disabled after teleport");
+        Check(!IntroMenuEditorUtility.Read<GameObject>(c,"introMenuRoot").activeSelf && !IntroMenuEditorUtility.Read<GameObject>(c,"blackoutRoot").activeSelf,"Menu disabled after teleport");
         Check(ClientSimExtensions.GetClientSimPlayer(p).locomotionData.GetImmobilized(),"Player stays immobilized through transition");
     }
     if(state==5 && completeAt<0)
     {
         Check(teleported,"Teleport occurred");
         Check((bool)u.GetProgramVariable("introCompleted"),"Completion is retained locally");
-        Check(!c.fadeRenderer.enabled && alpha==0f,"Fade ends transparent and renderer is disabled");
+        Check(!IntroMenuEditorUtility.Read<Renderer>(c,"fadeRenderer").enabled && alpha==0f,"Fade ends transparent and renderer is disabled");
         Check(!ClientSimExtensions.GetClientSimPlayer(p).locomotionData.GetImmobilized(),"Movement released after fade");
-        Check(Vector3.Distance(p.GetPosition(),c.warehouseSpawn.position)<0.5f,"Arrived at referenced destination");
+        Check(Vector3.Distance(p.GetPosition(),IntroMenuEditorUtility.Read<Transform>(c,"warehouseSpawn").position)<0.5f,"Arrived at referenced destination");
         completeAt=Time.time;
-        movedTarget=c.warehouseSpawn.position+Vector3.right;
-        c.warehouseSpawn.position=movedTarget;
+        movedTarget=IntroMenuEditorUtility.Read<Transform>(c,"warehouseSpawn").position+Vector3.right;
+        IntroMenuEditorUtility.Read<Transform>(c,"warehouseSpawn").position=movedTarget;
         p.Respawn();respawnRequested=true;
     }
     if(respawnRequested && Time.time-completeAt>0.4f)
     {
         Check(Vector3.Distance(p.GetPosition(),movedTarget)<0.5f,"Respawn uses moved destination without changing code");
-        Check((int)u.GetProgramVariable("state")==5 && !c.introMenuRoot.activeSelf,"Respawn does not reopen menu");
+        Check((int)u.GetProgramVariable("state")==5 && !IntroMenuEditorUtility.Read<GameObject>(c,"introMenuRoot").activeSelf,"Respawn does not reopen menu");
         Finish("Completed");
     }
     if(Time.time-start>15)Finish("Timed out");
