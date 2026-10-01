@@ -339,7 +339,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 3dcf9b0253401a3458bc1fd3677b0068, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 2, y: 2}
         m_Offset: {x: 0, y: 0}
     - _MainTintTexture:
         m_Texture: {fileID: 0}
@@ -3729,7 +3729,7 @@ Material:
     - m_end_videoEffects: 0
     - m_end_voronoi: 0
     - m_lightingCategory: 1
-    - m_mainCategory: 0
+    - m_mainCategory: 1
     - m_modifierCategory: 0
     - m_raymarchingCategory: 0
     - m_renderingCategory: 0

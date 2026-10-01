@@ -42,8 +42,9 @@ Trumps contínuas são limpas ao fim da rodada.
 - Duas trumps por jogador no início da rodada (`trumpCardsPerRound`).
 - Na primeira rodada também: a distribuição ocorre após registrar as seis
   cartas numéricas iniciais, no estado sincronizado `trumpType`/`trumpOwner`.
-  A animação das cartas numéricas pode ainda estar em andamento. Não há
-  objetos de tarot na cena ainda. Com `logDeals` ativo, o Console mostra cada
+  A animação das cartas numéricas pode ainda estar em andamento. As cartas
+  tarot aparecem nas áreas `TarotsSpawnHere` assim que o estado
+  sincronizado é atualizado. Com `logDeals` ativo, o Console mostra cada
   trump entregue e seu jogador.
 - Máximo de oito na mão (`maxTrumpsPerPlayer`).
 - Chance de 20% de receber uma trump após Hit (`bonusTrumpChancePercent`).
@@ -54,18 +55,23 @@ Trumps contínuas são limpas ao fim da rodada.
   da rodada. Se ambos ficarem sem agir e receberem gancho, a partida termina
   empatada para evitar rodadas automáticas sem fim.
 
-## Integração visual pendente
+## Integração visual
 
-Criar um único modelo/prefab de tarot card e 25 texturas ou materiais, seguindo
-a estratégia das cartas numéricas. Associar o material pelo ID acima. A mão de
-cada jogador vem de `TrumpCountInHand(player)` e `TrumpAt(player, indice)`;
-`TrumpName(id)` fornece o nome. Ao selecionar uma carta, chamar
-`RequestUseTrump(indice)`, onde o índice começa em zero na **própria mão**.
+`Assets/Models/Tarot/Tarot.prefab` tem collider, Rigidbody, VRCPickup,
+descrição e símbolo. `TarotVisuals` cria a mão nas duas áreas
+`TarotsSpawnHere` usando `TrumpCountInHand(player)` e `TrumpAt(player, indice)`.
+Há 25 materiais Unity padrão em `Assets/Models/Tarot/Materials`, um por ID,
+com cor e símbolo distintos enquanto não existem texturas finais. A descrição
+começa invisível, aparece gradualmente ao pegar a carta e desaparece ao
+soltar. A carta solta fora da mesa retorna à posição inicial. Ao soltar sobre
+`TableTrigger` na própria vez, `TarotVisuals` chama
+`RequestUseTrump(indice)` e anima a carta até a linha do jogador em
+`Pos-Player1` ou `Pos-Player2`. O índice começa em zero na própria mão.
 
 As cartas contínuas usam `tableTrumpType[0..tableTrumpCount-1]` e
 `tableTrumpOwner`. O visual deve ser reconstruído também quando esses campos
-sincronizados mudarem. A identidade e o efeito da carta já estão no estado de
-rede; o prefab será somente a apresentação.
+sincronizados mudarem. `TarotVisuals` faz essa reconstrução. A identidade e o
+efeito da carta ficam no estado de rede; o prefab apresenta a carta localmente.
 
-A interface de seleção e o modelo/material do gancho ainda estão pendentes.
+O modelo/material do gancho ainda está pendente.
 Testes finais em duas instâncias reais do VRChat permanecem necessários.

@@ -1742,18 +1742,14 @@ public class CardDealer : MenSharpBehaviour
     /// Usa a trump na posicao <paramref name="cardIndex"/> da mao local. O dono
     /// do baralho recusa se nao for a vez de quem jogou.
     /// </summary>
-    public void RequestUseTrump(int cardIndex)
+public void RequestUseTrump(int cardIndex)
     {
-        int index = MySlotIndex();
-        if (index < 0)
+        if (!CanLocalPlayerAct())
         {
-            if (logTurns)
-            {
-                Debug.Log("CardDealer: tarot pedida sem Slot do jogador local.");
-            }
+            if (logTurns) Debug.Log("CardDealer: tarot ignorada fora da vez do jogador local.");
             return;
         }
-        slots[index].RequestUseTrump(cardIndex);
+        slots[turnIndex].RequestUseTrump(cardIndex);
     }
 
     /// <summary>Qual Slot e o do jogador local.</summary>
@@ -2249,5 +2245,12 @@ public class CardDealer : MenSharpBehaviour
         int index = MySlotIndex();
         return index >= 0 && index == turnIndex && slots[index] != null
             && slots[index].HasPlayer();
+    }
+
+
+public bool IsLocalPlayer(int player)
+    {
+        return slots != null && player >= 0 && player < slots.Length
+            && slots[player] != null && slots[player].IsMine();
     }
 }
