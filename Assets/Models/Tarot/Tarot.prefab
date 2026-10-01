@@ -390,6 +390,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a445ff2ba1bb81344adabd1bf4489545, type: 2}
+    - target: {fileID: -7511558181221131132, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
+      propertyPath: m_Materials.Array.data[1]
+      value: 
+      objectReference: {fileID: 2100000, guid: a445ff2ba1bb81344adabd1bf4489545, type: 2}
     - target: {fileID: 919132149155446097, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
       propertyPath: m_Name
       value: Tarot
@@ -530,6 +538,7 @@ MonoBehaviour:
   handIndex: 0
   tarotType: 0
   onTable: 0
+  ownedLocally: 0
   held: 0
   pendingUse: 0
   moving: 0

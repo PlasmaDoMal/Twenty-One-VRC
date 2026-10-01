@@ -205,11 +205,19 @@ private async Task WatchState()
 
     private Vector3 HandPosition(int player, int index)
     {
-        Bounds bounds = spawnAreas[player].bounds;
+        BoxCollider spawn = spawnAreas[player];
+        Bounds bounds = spawn.bounds;
+        Collider platform = spawn.transform.parent != null
+            ? spawn.transform.parent.GetComponent<Collider>() : null;
+        float surfaceY = platform != null ? platform.bounds.max.y : bounds.min.y;
+        BoxCollider prefabCollider = tarotPrefab.GetComponent<BoxCollider>();
+        float halfCardHeight = prefabCollider != null
+            ? prefabCollider.size.y * tarotPrefab.transform.localScale.y * 0.5f : 0.005f;
         int column = index % 4;
         int row = index / 4;
         return new Vector3(bounds.center.x + (column - 1.5f) * handSpacing,
-            bounds.max.y + 0.025f, bounds.center.z + (row - 0.5f) * 0.11f);
+            surfaceY + halfCardHeight + 0.001f,
+            bounds.center.z + (row - 0.5f) * 0.11f);
     }
 
     private Quaternion HandRotation(int player)
