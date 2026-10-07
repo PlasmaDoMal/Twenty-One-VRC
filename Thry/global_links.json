@@ -587,7 +587,7 @@
                 {
                     "name": "m_start_PoiShading",
                     "type": "Float",
-                    "floatValue": 0,
+                    "floatValue": 1,
                     "intValue": 0,
                     "colorValue": null,
                     "vectorValue": null,
@@ -1547,7 +1547,7 @@
                 {
                     "name": "s_start_ShadingAddPass",
                     "type": "Float",
-                    "floatValue": 0,
+                    "floatValue": 1,
                     "intValue": 0,
                     "colorValue": null,
                     "vectorValue": null,
@@ -1587,7 +1587,7 @@
                 {
                     "name": "s_start_ShadingGlobalMask",
                     "type": "Float",
-                    "floatValue": 0,
+                    "floatValue": 1,
                     "intValue": 0,
                     "colorValue": null,
                     "vectorValue": null,

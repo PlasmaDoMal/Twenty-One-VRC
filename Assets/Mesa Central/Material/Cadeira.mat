@@ -3729,7 +3729,7 @@ Material:
     - m_end_videoEffects: 0
     - m_end_voronoi: 0
     - m_lightingCategory: 1
-    - m_mainCategory: 0
+    - m_mainCategory: 1
     - m_modifierCategory: 0
     - m_raymarchingCategory: 0
     - m_renderingCategory: 0
@@ -3805,7 +3805,7 @@ Material:
     - m_start_PoiGlobalCategory: 0
     - m_start_PoiLightData: 0
     - m_start_PoiPostProcessingCategory: 0
-    - m_start_PoiShading: 0
+    - m_start_PoiShading: 1
     - m_start_PoiSkin: 0
     - m_start_PoiTimeOptions: 0
     - m_start_PoiUVCategory: 0
@@ -4420,8 +4420,8 @@ Material:
     - s_start_ScrollingEmission1: 0
     - s_start_ScrollingEmission2: 0
     - s_start_ScrollingEmission3: 0
-    - s_start_ShadingAddPass: 0
-    - s_start_ShadingGlobalMask: 0
+    - s_start_ShadingAddPass: 1
+    - s_start_ShadingGlobalMask: 1
     - s_start_Smoothing: 1
     - s_start_SphericalDissolve: 0
     - s_start_SquishBlending: 1
