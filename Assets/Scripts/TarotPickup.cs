@@ -101,6 +101,7 @@ public class TarotPickup : MenSharpBehaviour
         if (body != null) body.isKinematic = true;
         if (cardCollider != null) cardCollider.enabled = false;
     }
+    public float nextIdlePoseCheck;
     public void Update()
     {
         if (fading)
@@ -115,10 +116,11 @@ public class TarotPickup : MenSharpBehaviour
         {
             // Pickups can receive a final physics/simulator pose after release.
             // Keep an idle card at its assigned spawn or used-table position.
-            if (cardTransform != null)
+            if (cardTransform != null && Time.time >= nextIdlePoseCheck)
             {
-                cardTransform.position = homePosition;
-                cardTransform.rotation = homeRotation;
+                nextIdlePoseCheck = Time.time + 0.1f;
+                if ((cardTransform.position - homePosition).sqrMagnitude > 0.000001f) cardTransform.position = homePosition;
+                if (Quaternion.Angle(cardTransform.rotation, homeRotation) > 0.1f) cardTransform.rotation = homeRotation;
             }
             return;
         }

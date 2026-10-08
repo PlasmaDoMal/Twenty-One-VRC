@@ -50,7 +50,9 @@ public class TarotVisuals : MenSharpBehaviour
         }
         if (!processed && dealer.actionEpoch == pendingEpoch && IsLocalOwner(pendingOwner)
             && dealer.matchStarted && Time.time - pendingSince < acknowledgementTimeout) return;
-        pendingCard.ownedLocally = IsLocalOwner(pendingCard.ownerPlayer);
+        int rejectedOwner = pendingCard.ownerPlayer;
+        bool rejectedOwnedLocally = IsLocalOwner(rejectedOwner);
+        pendingCard.ownedLocally = rejectedOwnedLocally;
         pendingCard.awaitingUse = false;
         pendingCard.pendingUse = false;
         pendingCard.onTable = false;
@@ -89,7 +91,9 @@ public class TarotVisuals : MenSharpBehaviour
             {
                 TarotPickup card = handVisuals[i];
                 if (card == null) continue;
-                card.ownedLocally = IsLocalOwner(card.ownerPlayer);
+                int viewerOwner = card.ownerPlayer;
+                bool viewerOwns = IsLocalOwner(viewerOwner);
+                card.ownedLocally = viewerOwns;
                 if (card.pickup != null && !card.held && !card.moving && !card.awaitingUse)
                     card.pickup.pickupable = card.ownedLocally;
             }
@@ -97,7 +101,9 @@ public class TarotVisuals : MenSharpBehaviour
             {
                 TarotPickup card = tableVisuals[i];
                 if (card == null) continue;
-                card.ownedLocally = IsLocalOwner(card.ownerPlayer);
+                int viewerOwner = card.ownerPlayer;
+                bool viewerOwns = IsLocalOwner(viewerOwner);
+                card.ownedLocally = viewerOwns;
                 if (card.pickup != null && !card.held && !card.moving && !card.awaitingUse)
                     card.pickup.pickupable = card.ownedLocally;
             }
@@ -223,7 +229,8 @@ public class TarotVisuals : MenSharpBehaviour
         pickup.onTable = placed; pickup.face = face;
         pickup.homePosition = position; pickup.homeRotation = rotation;
         pickup.symbol = TrumpSymbol(type); pickup.description = TrumpDescription(type);
-        pickup.ownedLocally = IsLocalOwner(owner);
+        bool createdOwnedLocally = IsLocalOwner(owner);
+        pickup.ownedLocally = createdOwnedLocally;
         pickup.Configure();
         card.name = (placed ? "TarotTable_" : "TarotHand_") + owner + "_" + index + "_" + type;
         return pickup;

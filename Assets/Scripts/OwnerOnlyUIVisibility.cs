@@ -17,6 +17,7 @@ using VRC.SDKBase;
 /// e fica visivel (<see cref="showWhenOffline"/>), senao nao daria para montar
 /// a cena.
 /// </summary>
+[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class OwnerOnlyUIVisibility : MenSharpBehaviour
 {
     [Tooltip("Objetos que so o dono enxerga (o CanvasGroup do menu, ou o proprio GameObject).")]
@@ -47,18 +48,16 @@ public class OwnerOnlyUIVisibility : MenSharpBehaviour
     public void Start()
     {
         ApplyVisibility();
-        Scheduler.Run(() => WatchVisibility());
+
     }
 
-    private async Task WatchVisibility()
+    public float nextVisibilityPoll;
+    public void Update()
     {
-        while (true)
-        {
-            ApplyVisibility();
-            await Scheduler.NextFrame();
-        }
+        if (Time.time < nextVisibilityPoll) return;
+        nextVisibilityPoll = Time.time + 0.1f;
+        ApplyVisibility();
     }
-
     /// <summary>True quando o menu esta visivel para quem esta olhando.</summary>
     public bool IsVisibleToViewer
     {

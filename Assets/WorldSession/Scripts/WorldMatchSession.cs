@@ -71,6 +71,24 @@ public class WorldMatchSession : UdonSharpBehaviour
         Networking.SetOwner(player, playerSlots[0]);
         RequestSerialization();
     }
+    // Explicit diagnostic mode: one player controls both seats, no artificial guest.
+    public void _RequestSoloStart() { if (IntroDone()) SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(StartSoloTable)); }
+    [NetworkCallable]
+    public void StartSoloTable()
+    {
+        if (!Networking.IsOwner(gameObject)) return;
+        VRCPlayerApi player = Caller();
+        if (!Utilities.IsValid(player) || launching || hostId != player.playerId || guestId >= 0) return;
+        guestId = hostId;
+        Networking.SetOwner(player, dealer.gameObject);
+        Networking.SetOwner(player, playerSlots[0]);
+        Networking.SetOwner(player, playerSlots[1]);
+        launching = true;
+        startAt = Networking.GetServerTimeInSeconds() + 1.5;
+        launchEpoch++;
+        RequestSerialization();
+        ApplyWorldState();
+    }
     [NetworkCallable]
     public void JoinTable()
     {

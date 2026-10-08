@@ -69,18 +69,19 @@ public class CRTScreenTimer : MenSharpBehaviour
         {
             dealer = GetComponent<CardDealer>();
         }
-        Scheduler.Run(() => Watch());
+
     }
 
-    private async System.Threading.Tasks.Task Watch()
+    public float nextTimerPoll;
+    public float lastTimerPoll;
+    public void Update()
     {
-        while (true)
-        {
-            Apply(Time.deltaTime);
-            await Scheduler.NextFrame();
-        }
+        if (Time.time < nextTimerPoll) return;
+        float delta = Time.time - lastTimerPoll;
+        lastTimerPoll = Time.time;
+        nextTimerPoll = Time.time + 0.1f;
+        Apply(delta);
     }
-
     /// <summary>
     /// Le o estado do dealer e acerta as TVs. A contagem manda enquanto ha
     /// tempo; fora dela, mostra YouWon/YouLost para o jogador local conforme o

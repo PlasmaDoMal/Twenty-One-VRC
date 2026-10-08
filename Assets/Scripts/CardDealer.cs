@@ -483,8 +483,10 @@ public class CardDealer : MenSharpBehaviour
 
     [HideInInspector] public float nextCardVisibilityRefresh;
 
+    public float nextSlotPoll;
     public void Update()
     {
+        if (Time.time >= nextSlotPoll) { nextSlotPoll = Time.time + 0.05f; ProcessSlots(); }
         if (Time.time < nextCardVisibilityRefresh) return;
         nextCardVisibilityRefresh = Time.time + 0.2f;
         RefreshCardVisibility();
@@ -502,7 +504,7 @@ public class CardDealer : MenSharpBehaviour
     {
         nextCardVisibilityRefresh = 0f;
         RefreshScores();
-        Scheduler.Run(() => WatchSlots());
+
         // Fecha a partida que ja estava valendo quando este cliente entrou, para
         // um menu que ficou aceso no outro cliente nao sobreviver a carga.
         NotifyTurnChanged();
@@ -883,7 +885,7 @@ public class CardDealer : MenSharpBehaviour
                 return false;
             }
         }
-        if (VRCPlayerApi.GetPlayerCount() < HandCount())
+        if (VRCPlayerApi.GetPlayerCount() < HandCount() && !(preserveLobbySlots && slots[0].IsMine() && slots[1].IsMine()))
         {
             if (logTurns)
             {
@@ -2396,7 +2398,7 @@ public void RequestUseTrump(int cardIndex)
         {
             return false;
         }
-        int index = MySlotIndex();
+        int index = slots != null && turnIndex >= 0 && turnIndex < slots.Length && slots[turnIndex] != null && slots[turnIndex].IsMine() ? turnIndex : MySlotIndex();
         return index >= 0 && index == turnIndex && slots[index] != null
             && slots[index].HasPlayer();
     }

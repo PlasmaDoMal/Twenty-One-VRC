@@ -19,6 +19,7 @@ using VRC.SDKBase;
 /// Em editor ou em single player nao ha ninguem no world, e o texto fica
 /// visivel (<see cref="showWhenOffline"/>), senao nao daria para montar a cena.
 /// </summary>
+[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class OwnerOnlyVisibility : MenSharpBehaviour
 {
     [Tooltip("Renderers que so o dono enxerga. Guarde aqui o MeshRenderer do texto, nao o do cubo.")]
@@ -46,18 +47,16 @@ public class OwnerOnlyVisibility : MenSharpBehaviour
     public void Start()
     {
         ApplyVisibility();
-        Scheduler.Run(() => WatchVisibility());
+
     }
 
-    private async Task WatchVisibility()
+    public float nextVisibilityPoll;
+    public void Update()
     {
-        while (true)
-        {
-            ApplyVisibility();
-            await Scheduler.NextFrame();
-        }
+        if (Time.time < nextVisibilityPoll) return;
+        nextVisibilityPoll = Time.time + 0.1f;
+        ApplyVisibility();
     }
-
     /// <summary>True quando o texto esta visivel para quem esta olhando.</summary>
     public bool IsVisibleToViewer
     {

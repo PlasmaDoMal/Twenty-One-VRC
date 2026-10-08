@@ -8,6 +8,7 @@ public class MatchHUD : MenSharpBehaviour
     public CardDealer dealer;
     public TextMeshPro[] displays;
     public float nextUpdate;
+    public string lastDisplay;
 
     public void Update()
     {
@@ -29,6 +30,8 @@ public class MatchHUD : MenSharpBehaviour
         int bet = dealer.roundResolving || dealer.matchOver ? dealer.resolvedBet : dealer.CurrentBet();
         string value = "<size=80%>ROUND " + dealer.roundNumber + "   /   BET " + bet
             + "</size>\n" + lives + "\n" + status + (result.Length > 0 ? "\n" + result : "");
+        if (value == lastDisplay) return;
+        lastDisplay = value;
         for (int i = 0; i < displays.Length; i++)
             if (displays[i] != null) displays[i].text = value;
     }

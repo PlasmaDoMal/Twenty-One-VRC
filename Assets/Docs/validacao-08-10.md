@@ -18,3 +18,17 @@ Interrupção solicitada pelo usuário por limite de uso. Ficaram sem conclusão
 
 ## Correção do respawn após teste VRChat
 O VRCSceneDescriptor estava com RespawnHeightY = 0, no nível do piso do basement. Alterado para -10 na cena VRCDefaultWorldScene, permitindo que o jogador assente no piso sem disparar o respawn por altura. Requer novo Build & Test no VRChat para confirmar o sintoma relatado.
+
+## Iluminação e teste solo
+Cena: duas luzes locais no basement e uma sobre a mesa, sem sombras adicionais. IntroMenuRoot ampliado para escala 2. SOLO TEST na tela Create inicia com o host nos dois slots; o mesmo jogador controla as duas mãos. A partida normal continua exigindo dois jogadores distintos. O modo solo é diagnóstico, não valida transporte de rede ou privacidade entre jogadores.
+
+Validação solo no ClientSim: 1 jogador, clique no botão SOLO TEST, host=guest=1, launching=true, teleported=true, matchStarted=true, logCount=6, posição Play1=(-0.03,0.29,23.18). Compilação sem erros no console. Iluminação e tamanho final do menu ainda precisam de revisão visual no cliente VRChat.
+
+## Pointer VR, menu privado e custo contínuo
+Hit/Stay não tinham VRCUiShape e OwnerOnlyUIVisibility estava sem assignedSlot. Corrigidos no TwentyOne da cena e no prefab. Visibilidade tem sync None e usa ownership do slot local; CanvasGroup do pai controla alpha, interação e raycasts. Textos não interceptam o pointer; GraphicRaycaster não bloqueia a UI por colliders da mesa.
+Reduzidos: ProcessSlots para 20 Hz, visibilidade e timer para 10 Hz, atualização de texto do HUD somente quando muda, correção de pose de tarot ocioso para 10 Hz e apenas se deslocado. Animações continuam por frame. TestLight com range 154 desativada; CRTs passam de ForcePixel para Auto, sombra secundária removida e sombra principal com resolução Low.
+Essas alterações reduzem trabalho observado; FPS e pointer em headset exigem Build & Test. Não há medição de performance real disponível neste teste local.
+
+Teste ClientSim de menus: com slot0 local, Player1_Choices alpha=1/raycasts=true e Player2_Choices alpha=0/raycasts=false. Invertendo ownership, os valores se inverteram. Hit mudou logCount de 6 para 7 e turnIndex de 0 para 1. Durante a bateria reapareceu erro ownerPlayer em TarotVisuals; chamadas IsLocalOwner foram separadas das atribuições de campos de pickups para evitar resolução incorreta do receiver pelo MenSharp.
+
+Regressão final após correção de TarotVisuals: partida solo iniciou com 6 cartas e 4 tarots; quatro Canvas Hit/Stay com VRCUiShape. Pickup/drop de Perfect Draw (20) foi confirmado, usedTrumpCount=1, pendingCard=null, visual TarotTable_0_0_20 criado. Console zerado antes da bateria e permaneceu sem erros. Essa regressão cobre o erro recorrente encontrado nesta revisão; não comprova FPS no headset ou rede entre clientes reais.
