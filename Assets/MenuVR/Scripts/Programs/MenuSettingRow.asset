@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e142a927bfa1c04a92e3fc2df40bba4, type: 3}
+  m_Script: {fileID: 11500000, guid: fa4ab60f2ceed53458a029f6d66aeb41, type: 3}
   m_Name: MenuSettingRow
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: d6e6216f7026a054a97e2fe3a6c09d04, type: 2}

@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e142a927bfa1c04a92e3fc2df40bba4, type: 3}
+  m_Script: {fileID: 11500000, guid: fa4ab60f2ceed53458a029f6d66aeb41, type: 3}
   m_Name: OwnerOnlyVisibility
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: 50b30ae1d7966a84f8d0b767af5830ce, type: 2}

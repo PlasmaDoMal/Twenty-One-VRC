@@ -16055,7 +16055,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &81067423
 MonoBehaviour:
-  m_ObjectHideFlags: 2
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -16114,9 +16114,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30816f9fa5cb91b47bbb7c825b2666b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <DisableInteractive>k__BackingField: 0
+  <InteractionText>k__BackingField: 
   serializationData:
     SerializedFormat: 2
-    SerializedBytes: 
+    SerializedBytes: []
     ReferencedUnityObjects: []
     SerializedBytesString: 
     Prefab: {fileID: 0}
@@ -16124,6 +16126,7 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 81067423}
+  _backingUdonBehaviourDump: {fileID: 81067423}
   playerNames:
   - JOGADOR 01
   - JOGADOR 02
@@ -421278,7 +421281,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1874206954
 MonoBehaviour:
-  m_ObjectHideFlags: 2
+  m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -421317,9 +421320,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2622c915cfead1a468dc045598e75a8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  <DisableInteractive>k__BackingField: 0
+  <InteractionText>k__BackingField: 
   serializationData:
     SerializedFormat: 2
-    SerializedBytes: 
+    SerializedBytes: []
     ReferencedUnityObjects: []
     SerializedBytesString: 
     Prefab: {fileID: 0}
@@ -421327,6 +421332,7 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1874206954}
+  _backingUdonBehaviourDump: {fileID: 1874206954}
   npcRoot: {fileID: 1874206953}
   torso: {fileID: 924668516}
   neck: {fileID: 721284418}
@@ -421340,6 +421346,10 @@ MonoBehaviour:
   bodySmoothSpeed: 1.8
   lookAtLocalPlayer: 1
   previewTarget: {fileID: 0}
+  turningBody: 0
+  neutralRoot: {x: 0, y: 0, z: 0, w: 0}
+  neutralTorso: {x: 0, y: 0, z: 0}
+  elapsed: 0
   currentHeadYaw: 0
   currentTorsoYaw: 0
   currentBodyYaw: 0
