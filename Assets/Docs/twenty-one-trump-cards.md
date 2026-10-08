@@ -2,6 +2,10 @@
 
 Twenty One é um Blackjack 1v1 em que cada jogador usa 25 tipos de trump cards para mudar a regra, a aposta e as mãos.
 
+## Regra atual da adaptação VRC (08/10/2026)
+
+O timeout apenas passa a vez e reinicia o cronômetro. Não causa dano e não encerra a rodada. Dano só é aplicado quando a rodada é resolvida. A descrição do gancho abaixo documenta o jogo original, não a regra atual desta adaptação.
+
 ## Como o jogo funciona
 
 Ganha a rodada quem chega mais perto de 21 sem passar. O perdedor da rodada sofre a aposta (tally) e, quando o contador dele acaba, perde o jogo.

@@ -1,12 +1,12 @@
 # Estado do Twenty One
 
 Cena integrada: `Assets/Scenes/VRCDefaultWorldScene.unity`.
-Revisão: 07/10/2026. Esta lista substitui as pendências da cena Game de setembro.
+Revisão: 08/10/2026. Esta lista substitui as pendências da cena Game de setembro.
 
 ## Implementado
 
 - Intro -> basement -> TwentyOne, com fade e destinos Play1/Play2.
-- Reservas de host/guest; Start requer dois jogadores distintos e somente o host pode iniciar.
+- Reservas de host/guest; Start normal requer dois jogadores distintos e somente o host pode iniciar. Solo test permite ao host controlar os dois slots usando o menu de Play1.
 - TwentyOne ativa antes do teleporte. Basement e visuais do intro são ocultados localmente quando deixam de ser necessários e reativados antes do retorno.
 - Menu em inglês, preto e branco, sem personalização; Hit/Stay ligados ao dealer.
 - Baralho único 1..11, abertura de seis cartas. Cada jogador vê a face da própria carta especial; os demais veem o verso até o resultado. Materiais são aplicados localmente conforme o dono do slot.
@@ -15,18 +15,20 @@ Revisão: 07/10/2026. Esta lista substitui as pendências da cena Game de setemb
 - Tarots com pickup, descrição interpolada, retorno suave, spawn fora da mesa e consumo somente na própria vez. Histórico dos usados separado dos efeitos contínuos.
 - As 25 texturas em `Docs/trump-cards` estão associadas aos materiais Tarot_01..25 pelo ID. UV preservado. O símbolo provisório é ocultado quando há textura.
 - Timer padrão 60 segundos e TVs CRT com contagem/alerta. Zero desliga o timeout.
-- Timeout resolve a rodada imediatamente a favor do adversário. Remove/Exchange não revertem uma rodada resolvida. Bless continua seguindo a regra de sobrevivência ao dano; não muda o vencedor.
+- Timeout apenas passa a vez e reinicia o cronômetro, sem resolver a rodada ou causar dano. Remove/Exchange não revertem uma rodada resolvida. Bless continua seguindo a regra de sobrevivência ao dano; não muda o vencedor.
 - Fase de resultado: cartas numéricas ocultas são reveladas para todos, ações são bloqueadas e o resultado fica visível por `resultDisplaySeconds` (padrão 3 s), antes da próxima rodada ou do fim da partida.
 - MatchHUD apresenta vida dos dois jogadores, rodada, aposta, vez/tempo e resultado em inglês.
 
 ## Validação
 
-Compilação, cena/prefab e resultados dos testes desta revisão são registrados em `validacao-07-10.md`. Não confundir testes locais do ClientSim com transporte de rede real.
+Compilação, cena/prefab e resultados dos testes desta revisão são registrados em `validacao-08-10.md`; `validacao-07-10.md` é histórico. Não confundir testes locais do ClientSim com transporte de rede real.
 
 ## Validação local ainda necessária
 
+- Investigar erro ownerPlayer em TarotVisuals observado na abertura durante a última regressão. Botões e regra de dano passaram; isso não certifica a execução completa dos tarots.
+
 - Os 25 tipos passaram em cenários controlados de pickup/drop e efeito. Ainda cobrir limites de capacidade, falta de alvo e descarte em casos adversos de rede.
-- Revelação conferida nos Renderers: seis faces corretas no resultado. Timeout, perda de vida, HUD, bloqueio, Bless e passagem para a rodada seguinte passaram no ClientSim.
+- Revelação conferida nos Renderers: seis faces corretas no resultado. Os testes antigos de timeout (perda da rodada) foram substituídos pela regra de apenas passar a vez. Dano ocorre somente na resolução da rodada.
 - Reinício com a mesa ociosa passou durante a bateria. Ainda conferir reinício/saída enquanto houver animações em andamento.
 - O erro interno de PlayerLoop ocorreu em uma sessão anterior com capturas MCP; a bateria final terminou sem erros no console. Evitar confundir essa ocorrência com um erro Udon confirmado.
 

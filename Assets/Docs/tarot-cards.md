@@ -50,7 +50,7 @@ Trumps contínuas são limpas ao fim da rodada.
 - Chance de 20% de receber uma trump após Hit (`bonusTrumpChancePercent`).
 - Trumps não usadas são descartadas na rodada seguinte
   (`clearTrumpsEachRound`).
-- Timeout padrão 60 s, zero desliga. Esgotar o tempo resolve a rodada a favor do adversário.
+- Timeout padrão 60 s, zero desliga. Esgotar o tempo apenas passa a vez e reinicia o cronômetro, sem causar dano ou resolver a rodada.
 
 ## Integração visual
 
@@ -68,7 +68,7 @@ soltar. A carta solta fora da mesa retorna à posição inicial. Ao soltar sobre
 Os efeitos contínuos usam tableTrumpType/tableTrumpOwner. Os objetos usados são reconstruídos por usedTrumpType/usedTrumpOwner e ficam como histórico mesmo quando um efeito contínuo é destruído. A identidade e o
 efeito da carta ficam no estado de rede; o prefab apresenta a carta localmente.
 
-O timeout agora resolve a rodada diretamente; não gera uma carta de gancho.
+O timeout apenas passa a vez; não gera gancho, dano nem resolução imediata da rodada. Dano só na resolução da rodada.
 Testes finais em duas instâncias reais do VRChat permanecem necessários.
 
 ## Fluxo de pickup e uso (07/10/2026)

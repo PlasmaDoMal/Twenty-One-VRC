@@ -7,7 +7,7 @@ Cena: Assets/Scenes/VRCDefaultWorldScene.unity. Nenhum bake foi iniciado.
 - Luzes fixas do basement e TwentyOne em Baked. TestLight permanece desligada.
 - Geometria fixa contribui para GI e recebe Lightmaps. Cartas, tarots, rigidbodies, Canvas, textos de gameplay e glows dinâmicos ficam fora da contribuição. Nenhum objeto foi reposicionado.
 - Generate Lightmap UVs habilitado nos três FBX de cenário/mesa; três malhas locais receberam cópias com UV2 em Assets/Lighting/BakeMeshes. Materiais e UVs de textura das cartas não foram modificados.
-- Dois grupos de Light Probes, 27 posições cada, para iluminar avatares e objetos móveis.
+- Light Probes separados por ambiente: Basement_LightProbes sob o Environment externo, redistribuído pelo warehouse; TwentyOne_LightProbes sob TwentyOne, redistribuído pela sala e junto aos jogadores. Removidas posições detectadas dentro de colliders sólidos (margem 0,12 m), mantidas várias alturas. Grupo da sala também atualizado no prefab TwentyOne. As duas distribuições não se sobrepõem espacialmente.
 - Dois Reflection Probes Baked, resolução 128, com box projection. Nenhum RenderProbe foi executado.
 - Basement e TwentyOne estão ativos no Editor para participar do bake. Os scripts continuam controlando a ativação local durante o jogo.
 

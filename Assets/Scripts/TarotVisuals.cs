@@ -228,7 +228,10 @@ public class TarotVisuals : MenSharpBehaviour
         pickup.ownerPlayer = owner; pickup.handIndex = index; pickup.tarotType = type;
         pickup.onTable = placed; pickup.face = face;
         pickup.homePosition = position; pickup.homeRotation = rotation;
-        pickup.symbol = TrumpSymbol(type); pickup.description = TrumpDescription(type);
+        string createdSymbol = TrumpSymbol(type);
+        string createdDescription = TrumpDescription(type);
+        pickup.symbol = createdSymbol;
+        pickup.description = createdDescription;
         bool createdOwnedLocally = IsLocalOwner(owner);
         pickup.ownedLocally = createdOwnedLocally;
         pickup.Configure();

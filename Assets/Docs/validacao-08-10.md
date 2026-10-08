@@ -1,5 +1,15 @@
 # Validação de 08/10/2026 — alvo PC
 
+## Revisão de turnos e botões
+
+Regra atual: dano somente na resolução da rodada. Timeout passa a vez, reinicia o cronômetro e zera a sequência de Stays, sem encerrar a rodada. Hit e o primeiro Stay não causam dano. Dois Stays consecutivos resolvem a rodada normalmente.
+
+Os quatro callbacks Unity Button de Hit/Stay apontavam para componentes Udon sem programa. Referências corrigidas na cena e no prefab; esse defeito também afetava multiplayer. No solo, os dois turnos usam Player1_Choices, pois o jogador ocupa Play1 e controla os dois slots. Player2_Choices fica oculto. Notificações de turno iniciam animações no Update, evitando reentrada do scheduler durante a distribuição.
+
+ClientSim: botão Solo iniciou seis cartas, vida [3,3]. Callback real Hit aumentou logCount para 7 e passou de turno 0 para 1; callback real Stay retornou para 0, sem alterar vida/rodada. Timeouts repetidos mantiveram rodada 1 e vida [3,3], com consecutiveStays=0. Dois Stays encerraram a rodada e aplicaram a aposta ao perdedor. MenSharp recompilou os 20 programas; novos campos conferidos no programa de TurnFadeIn.
+
+Ainda foi observado erro de símbolo ownerPlayer em TarotVisuals durante a abertura. Não considerar toda a execução livre de erros: investigar esse caminho de criação/atualização dos tarots e repetir pickup/drop. Rede, entrada tardia e interação por laser VR continuam exigindo dois clientes reais.
+
 Implementadas proteções de sequência, rodada, identidade do dono do slot e tipo esperado da carta; confirmação/rejeição de uso de tarot, retorno em expiração; cancelamento da distribuição ao abandonar a sessão e tratamento de transferência de ownership. Referências dos slots ao dealer vinculadas na cena e no prefab.
 
 A compilação C#/MenSharp passou durante a revisão. O teste nativo de pickup/drop consumiu o tarot, mas revelou erro de referência `ownerPlayer` na apresentação da confirmação. A implementação final recria o visual usado a partir do histórico confirmado e anima desde a posição do descarte, evitando reaproveitar a referência problemática. Essa última alteração ainda exige regressão em Play Mode; não declarar o caso aprovado.

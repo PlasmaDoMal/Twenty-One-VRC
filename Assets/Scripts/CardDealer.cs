@@ -380,6 +380,7 @@ public class CardDealer : MenSharpBehaviour
         {
             return;
         }
+        bool solo = IsLocalPlayer(0) && IsLocalPlayer(1);
         for (int i = 0; i < turnListeners.Length; i++)
         {
             TurnFadeIn listener = turnListeners[i];
@@ -393,6 +394,7 @@ public class CardDealer : MenSharpBehaviour
             // parametros, so aplica.
             listener.incomingActionable = actionable;
             listener.incomingTurnPlayer = player;
+            listener.incomingSolo = solo;
             listener.ApplyTurn();
         }
     }
@@ -1648,6 +1650,7 @@ public class CardDealer : MenSharpBehaviour
             turnIndex = (player + 1) % HandCount();
         }
         currentPlayer = turnIndex;
+        actionEpoch++; // Invalidate requests from the previous turn.
         ResetTurnDeadline();
         RequestSerialization();
         NotifyTurnChanged();
@@ -1947,10 +1950,10 @@ public void RequestUseTrump(int cardIndex)
             {
                 if (logTurns)
                 {
-                    Debug.Log("CardDealer: jogador " + turnIndex + " perdeu a rodada por tempo.");
+                    Debug.Log("CardDealer: jogador " + turnIndex + " passou a vez por tempo.");
                 }
-                lastTimeoutPlayer = turnIndex;
-                FinishRound(1 - turnIndex);
+                consecutiveStays = 0;
+                AdvanceTurn(turnIndex);
                 return;
             }
         }

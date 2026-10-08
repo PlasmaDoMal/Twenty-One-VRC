@@ -9,6 +9,8 @@ public class MatchHUD : MenSharpBehaviour
     public TextMeshPro[] displays;
     public float nextUpdate;
     public string lastDisplay;
+    public int hudLifeOne, hudLifeTwo, hudBet, hudTarget, hudTurn, hudSeconds, hudWinner;
+    public bool hudResolving, hudMatchOver;
 
     public void Update()
     {
@@ -28,6 +30,11 @@ public class MatchHUD : MenSharpBehaviour
         string lives = dealer.life != null && dealer.life.Length >= 2
             ? "P1 LIFE " + dealer.life[0] + "   /   P2 LIFE " + dealer.life[1] : "";
         int bet = dealer.roundResolving || dealer.matchOver ? dealer.resolvedBet : dealer.CurrentBet();
+        hudLifeOne = dealer.life != null && dealer.life.Length > 0 ? dealer.life[0] : dealer.startingLife;
+        hudLifeTwo = dealer.life != null && dealer.life.Length > 1 ? dealer.life[1] : dealer.startingLife;
+        hudBet = bet; hudTarget = dealer.EffectiveTarget();
+        hudTurn = dealer.turnIndex; hudSeconds = dealer.turnSecondsLeft;
+        hudWinner = dealer.lastRoundWinner; hudResolving = dealer.roundResolving; hudMatchOver = dealer.matchOver;
         string value = "<size=80%>ROUND " + dealer.roundNumber + "   /   BET " + bet
             + "</size>\n" + lives + "\n" + status + (result.Length > 0 ? "\n" + result : "");
         if (value == lastDisplay) return;

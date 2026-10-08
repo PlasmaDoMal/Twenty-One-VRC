@@ -32,6 +32,7 @@ public class OwnerOnlyUIVisibility : MenSharpBehaviour
     [Tooltip("Com ninguem no world (editor, single player), deixa visivel para dar para montar a cena.")]
     public bool showWhenOffline = true;
     public VRC.Udon.UdonBehaviour assignedSlot;
+    public VRC.Udon.UdonBehaviour assignedOppositeSlot;
 
     [Tooltip("Marca o estado ja aplicado, para nao mexer nos alvos todo frame.")]
     public bool applied;
@@ -155,7 +156,12 @@ public class OwnerOnlyUIVisibility : MenSharpBehaviour
             // editor / single player: nao ha rival para esconder
             return showWhenOffline;
         }
-        if (assignedSlot != null) return Networking.IsOwner(local, assignedSlot.gameObject);
+        if (assignedSlot != null)
+        {
+            bool mine = Networking.IsOwner(local, assignedSlot.gameObject);
+            bool bothMine = mine && assignedOppositeSlot != null && Networking.IsOwner(local, assignedOppositeSlot.gameObject);
+            return mine && (!bothMine || ownerPlayerIndex == 0);
+        }
         if (slotsDirty)
         {
             RebuildSlots();

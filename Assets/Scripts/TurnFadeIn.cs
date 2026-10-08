@@ -32,6 +32,7 @@ public class TurnFadeIn : MenSharpBehaviour
     [Tooltip("Preenchido pelo CardDealer antes de chamar ApplyTurn.")]
     [HideInInspector] public bool incomingActionable;
     [HideInInspector] public int incomingTurnPlayer;
+    [HideInInspector] public bool incomingSolo;
 
     [Header("Targets")]
     [Tooltip("Botoes que tocam a animacao quando a vez chega.")]
@@ -50,6 +51,8 @@ public class TurnFadeIn : MenSharpBehaviour
     // Publicos de proposito: no MenSharp um campo privado vira estatico, e um
     // estatico seria compartilhado pelos dois TurnFadeIn da mesa.
     [HideInInspector] public bool lastWasActionable;
+    public int lastTurnPlayer = -1;
+    [HideInInspector] public bool turnPending;
 
     public void Start()
     {
@@ -101,8 +104,26 @@ public class TurnFadeIn : MenSharpBehaviour
     /// </summary>
     public void ApplyTurn()
     {
-        bool mine = incomingActionable && incomingTurnPlayer == playerIndex;
-        if (mine == lastWasActionable)
+        // Deal completion can notify us inside the shared MenSharp scheduler.
+        // Start animations on Update so their scheduler does not re-enter it.
+        turnPending = true;
+    }
+
+    public void Update()
+    {
+        if (!turnPending) return;
+        turnPending = false;
+        ApplyPendingTurn();
+    }
+
+    private void ApplyPendingTurn()
+    {
+        // Consume the notification without calling back into the dealer's scheduler.
+        bool solo = incomingSolo;
+        bool mine = incomingActionable && (solo ? playerIndex == 0 : incomingTurnPlayer == playerIndex);
+        bool turnChanged = lastTurnPlayer != incomingTurnPlayer;
+        lastTurnPlayer = incomingTurnPlayer;
+        if (mine == lastWasActionable && !(solo && mine && turnChanged))
         {
             return;
         }
