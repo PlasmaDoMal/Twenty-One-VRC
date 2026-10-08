@@ -43,35 +43,43 @@ Trumps contínuas são limpas ao fim da rodada.
 - Na primeira rodada também: a distribuição ocorre após registrar as seis
   cartas numéricas iniciais, no estado sincronizado `trumpType`/`trumpOwner`.
   A animação das cartas numéricas pode ainda estar em andamento. As cartas
-  tarot aparecem nas áreas `TarotsSpawnHere` assim que o estado
+  tarot aparecem nas áreas `Tarots_illspawnhere_Player1/2` assim que o estado
   sincronizado é atualizado. Com `logDeals` ativo, o Console mostra cada
   trump entregue e seu jogador.
 - Máximo de oito na mão (`maxTrumpsPerPlayer`).
 - Chance de 20% de receber uma trump após Hit (`bonusTrumpChancePercent`).
 - Trumps não usadas são descartadas na rodada seguinte
   (`clearTrumpsEachRound`).
-- O timeout fica desativado (`turnTimeoutSeconds = 0`) até existir o visual do
-  gancho. Se ativado, o gancho permanece como estado até Remove/Exchange ou fim
-  da rodada. Se ambos ficarem sem agir e receberem gancho, a partida termina
-  empatada para evitar rodadas automáticas sem fim.
+- Timeout padrão 60 s, zero desliga. Esgotar o tempo resolve a rodada a favor do adversário.
 
 ## Integração visual
 
 `Assets/Models/Tarot/Tarot.prefab` tem collider, Rigidbody, VRCPickup,
 descrição e símbolo. `TarotVisuals` cria a mão nas duas áreas
-`TarotsSpawnHere` usando `TrumpCountInHand(player)` e `TrumpAt(player, indice)`.
+`Tarots_illspawnhere_Player1/2` a partir de trumpType/trumpOwner.
 Há 25 materiais Unity padrão em `Assets/Models/Tarot/Materials`, um por ID,
-com cor e símbolo distintos enquanto não existem texturas finais. A descrição
+com as texturas de Assets/Docs/trump-cards associadas por ID. A descrição
 começa invisível, aparece gradualmente ao pegar a carta e desaparece ao
 soltar. A carta solta fora da mesa retorna à posição inicial. Ao soltar sobre
 `TableTrigger` na própria vez, `TarotVisuals` chama
 `RequestUseTrump(indice)` e anima a carta até a linha do jogador em
 `Pos-Player1` ou `Pos-Player2`. O índice começa em zero na própria mão.
 
-As cartas contínuas usam `tableTrumpType[0..tableTrumpCount-1]` e
-`tableTrumpOwner`. O visual deve ser reconstruído também quando esses campos
-sincronizados mudarem. `TarotVisuals` faz essa reconstrução. A identidade e o
+Os efeitos contínuos usam tableTrumpType/tableTrumpOwner. Os objetos usados são reconstruídos por usedTrumpType/usedTrumpOwner e ficam como histórico mesmo quando um efeito contínuo é destruído. A identidade e o
 efeito da carta ficam no estado de rede; o prefab apresenta a carta localmente.
 
-O modelo/material do gancho ainda está pendente.
+O timeout agora resolve a rodada diretamente; não gera uma carta de gancho.
 Testes finais em duas instâncias reais do VRChat permanecem necessários.
+
+## Fluxo de pickup e uso (07/10/2026)
+
+VRCDefaultWorldScene agora tem TarotVisuals no objeto Tarot, com os dois Tarots_illspawnhere, um TableTrigger e Pos-Player1/Pos-Player2 na região ocupada pela prévia da mesa. Os spawns são associados à posição física dos slots: quem usa Play1 fica perto de Tarots_illspawnhere_Player2.
+
+Configure, ApplyMove e CardDropped usam campos públicos e eventos sem argumentos, conforme a regra do MenSharp. Opacidade da descrição e retorno de posição/rotação são interpolados em Update. Cartas disponíveis aparecem nos spawns; ao soltar fora da mesa ou fora da vez, retornam ao spawn. Sobre a mesa e na própria vez, o dealer valida a intenção e consome a carta. Cartas já usadas continuam com descrição e pickup, mas soltá-las só devolve à posição registrada.
+
+usedTrumpType/usedTrumpOwner/usedTrumpCount no dealer sincronizam o histórico visual, inclusive efeitos instantâneos. Esse histórico é separado das trumps contínuas que ainda influenciam as regras e é limpo em cada rodada.
+
+Validação no ClientSim (07/10/2026): eventos nativos `_onPickup` e `_onDrop`; descrição chegou a alpha 1; retorno fora da mesa e retorno de carta usada tiveram erro de posição 0; descarte válido registrou usedTrumpCount=1, reduziu a mão de 4 para 3 e terminou em Pos-Player1 (0.13, 1.11, 22.54). Console sem erros após os testes. A sessão foi suspensa apenas nessa execução de Play Mode para isolar a interação; não foi salvo esse estado temporário. Teste de rede com dois clientes reais ainda não executado.
+
+
+Validação complementar: os 25 IDs passaram em cenários controlados de efeito e interação no ClientSim. Evidências em qa-07-10.json e validacao-07-10.md. TarotPickup conserva a posição local de repouso até pickup. A carta numérica especial mostra a face para o próprio dono e o verso para adversários/espectadores; o resultado revela todas as faces. Transporte com dois clientes VRChat reais continua sem validação.

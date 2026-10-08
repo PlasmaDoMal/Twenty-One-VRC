@@ -338,7 +338,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 2128a4ab99880b24cb33a9f55092598e, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTintTexture:
@@ -3729,7 +3729,7 @@ Material:
     - m_end_videoEffects: 0
     - m_end_voronoi: 0
     - m_lightingCategory: 0
-    - m_mainCategory: 0
+    - m_mainCategory: 1
     - m_modifierCategory: 0
     - m_raymarchingCategory: 0
     - m_renderingCategory: 0
@@ -4754,7 +4754,7 @@ Material:
     - _ClearCoatReflectionTint: {r: 1, g: 1, b: 1, a: 1}
     - _ClearCoatSpecularTint: {r: 1, g: 1, b: 1, a: 1}
     - _ClothMetallicSmoothnessMapPan: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 0.85, g: 0.306, b: 0.306, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _ConstellationALBrightnessMod: {r: 0, g: 0, b: 0, a: 0}
     - _ConstellationALColorOverride: {r: 1, g: 1, b: 1, a: 1}
     - _ConstellationALColorOverrideRamp: {r: 0, g: 1, b: 0, a: 1}

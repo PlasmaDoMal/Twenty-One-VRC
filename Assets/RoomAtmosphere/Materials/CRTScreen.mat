@@ -2603,8 +2603,8 @@ Material:
     - _MatcapTPSMaskStrength: 1
     - _MatcapUVMode: 1
     - _MatcapUVToBlend: 1
-    - _Message: 0
-    - _MessageWidth: 0.448
+    - _Message: 2
+    - _MessageWidth: 0.798
     - _Metallic: 0
     - _MetallicGlossMapUV: 0
     - _Mirror: 0
@@ -3310,7 +3310,7 @@ Material:
     - _TextFPSEnabled: 0
     - _TextFPSRotation: 0
     - _TextFPSUV: 0
-    - _TextHeight: 0.25
+    - _TextHeight: 0.265
     - _TextNumericColorThemeIndex: 0
     - _TextNumericDecimalDigits: 0
     - _TextNumericEmissionStrength: 0

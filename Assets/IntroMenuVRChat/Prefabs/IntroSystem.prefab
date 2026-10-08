@@ -1003,9 +1003,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 91879e7d69df2ca4aaa8b63d38a76bd5, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -1881,9 +1881,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: fbb28adc8011e7c4da57c6e1c49c7101, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -2300,9 +2300,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 655aa50f4d2e7c948a9930af4ef3814e, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -3035,9 +3035,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: c5165f3a01f0dc44c828179a82559aec, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -3163,9 +3163,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 0}
+  m_audioClip: {fileID: 8300000, guid: 77fb880b17777d546a941788ef647052, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.5
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -3926,6 +3926,9 @@ MonoBehaviour:
   fixedMenuAnchor: {fileID: 2665593474253420809}
   followTurnThreshold: 25
   followTurnSpeed: 8
+  menuYaw: 0
+  targetYaw: 0
+  movementLocked: 0
   fadeToBlackDuration: 0.8
   blackHoldDuration: 0.2
   postTeleportDelay: 0.1
@@ -3933,8 +3936,14 @@ MonoBehaviour:
   menuRevealDuration: 0.4
   logoAnimator: {fileID: 2883263686501218427}
   menuDistance: 1.2
+  introReady: 0
   introCompleted: 0
   state: 0
+  fadeMaterial: {fileID: 0}
+  elapsed: 0
+  revealElapsed: 0
+  initialized: 0
+  respawnPending: 0
 --- !u!114 &2883263686501218427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12266,6 +12275,11 @@ MonoBehaviour:
   logoMoveAudio: {fileID: 1245249717996696027}
   readyForPlay: 0
   currentTime: 0
+  running: 0
+  playedEntry: 0
+  playedMove: 0
+  hovered: 0
+  white: {r: 1, g: 1, b: 1, a: 1}
 --- !u!114 &1726192828345956910
 MonoBehaviour:
   m_ObjectHideFlags: 0

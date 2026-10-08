@@ -43,11 +43,11 @@ public class LogoIntroAnimator : MenSharpBehaviour
     public AudioSource logoMoveAudio;
     [HideInInspector] public bool readyForPlay;
     [HideInInspector] public float currentTime;
-    private bool running;
-    private bool playedEntry;
-    private bool playedMove;
-    private bool hovered;
-    private Color white = Color.white;
+    [HideInInspector] public bool running;
+    [HideInInspector] public bool playedEntry;
+    [HideInInspector] public bool playedMove;
+    [HideInInspector] public bool hovered;
+    [HideInInspector] public Color white = Color.white;
 
     public void BeginIntro()
     {
@@ -61,16 +61,17 @@ public class LogoIntroAnimator : MenSharpBehaviour
 
     public void Start()
     {
-        Scheduler.Run(() => RunAnimation());
+        running = false;
+        readyForPlay = false;
+        currentTime = 0f;
+        playedEntry = false;
+        playedMove = false;
+        hovered = false;
     }
 
-    private async Task RunAnimation()
+    public void Update()
     {
-        while (true)
-        {
-            TickAnimation();
-            await Scheduler.NextFrame();
-        }
+        TickAnimation();
     }
 
     private void TickAnimation()
@@ -94,7 +95,7 @@ public class LogoIntroAnimator : MenSharpBehaviour
     public void Sample(float referenceTime)
     {
         float t = referenceTime;
-        if (tablePreview != null) tablePreview.SetActive(t >= tableRevealTime);
+
         bool loading = includeLoadingText && t >= loadingStart && t < loadingEnd;
         float headingAlpha = loading ? loadingBrightness.Evaluate(t) : 0f;
         loadingHeading.color = new Color(1f,1f,1f,headingAlpha);

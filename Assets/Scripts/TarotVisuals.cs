@@ -7,6 +7,7 @@ using VRC.SDKBase;
 public class TarotVisuals : MenSharpBehaviour
 {
     public CardDealer dealer;
+    public GameObject[] slotObjects;
     public GameObject tarotPrefab;
     public BoxCollider[] spawnAreas;
     public BoxCollider tableTrigger;
@@ -21,6 +22,44 @@ public class TarotVisuals : MenSharpBehaviour
     public TarotPickup[] handVisuals;
     public TarotPickup[] tableVisuals;
     public TarotPickup lastDroppedCard;
+    public TarotPickup incomingDroppedCard;
+
+
+    public TarotPickup pendingCard;
+    public int pendingSequence, pendingEpoch, pendingOwner;
+    public float pendingSince;
+    public float acknowledgementTimeout = 5f;
+
+    public void ResolvePendingUse()
+    {
+        if (pendingCard == null) return;
+        bool processed = dealer.processedActionSeq[pendingOwner] == pendingSequence
+            && dealer.processedActionEpoch[pendingOwner] == pendingEpoch;
+        bool accepted = processed && dealer.acceptedActionSeq[pendingOwner] == pendingSequence;
+        if (accepted && dealer.usedTrumpCount > 0)
+        {
+            lastDropPosition = pendingCard.cardTransform.position;
+            lastDropType = pendingCard.tarotType;
+            lastDropOwner = pendingOwner;
+            lastDropTime = Time.time;
+            handVisuals[pendingOwner * dealer.maxTrumpsPerPlayer + pendingCard.handIndex] = null;
+            Destroy(pendingCard.cardObject);
+            pendingCard = null;
+            lastFingerprint = int.MinValue;
+            return;
+        }
+        if (!processed && dealer.actionEpoch == pendingEpoch && IsLocalOwner(pendingOwner)
+            && dealer.matchStarted && Time.time - pendingSince < acknowledgementTimeout) return;
+        pendingCard.ownedLocally = IsLocalOwner(pendingCard.ownerPlayer);
+        pendingCard.awaitingUse = false;
+        pendingCard.pendingUse = false;
+        pendingCard.onTable = false;
+        pendingCard.ReturnHome();
+        pendingCard = null;
+        lastFingerprint = int.MinValue;
+    }
+
+    public float nextPoll;
     public Vector3 lastDropPosition;
     public int lastDropType;
     public int lastDropOwner;
@@ -37,34 +76,49 @@ public class TarotVisuals : MenSharpBehaviour
             return;
         }
         handVisuals = new TarotPickup[dealer.maxTrumpsPerPlayer * 2];
-        tableVisuals = new TarotPickup[dealer.tableTrumpCapacity];
-        Scheduler.Run(() => WatchState());
+        tableVisuals = new TarotPickup[64];
+
     }
 
-private async Task WatchState()
+    public void Update()
     {
-        while (true)
-        {
+            if (handVisuals == null || Time.time < nextPoll) return;
+            nextPoll = Time.time + 0.15f;
+            ResolvePendingUse();
+            for (int i = 0; i < handVisuals.Length; i++)
+            {
+                TarotPickup card = handVisuals[i];
+                if (card == null) continue;
+                card.ownedLocally = IsLocalOwner(card.ownerPlayer);
+                if (card.pickup != null && !card.held && !card.moving && !card.awaitingUse)
+                    card.pickup.pickupable = card.ownedLocally;
+            }
+            for (int i = 0; i < tableVisuals.Length; i++)
+            {
+                TarotPickup card = tableVisuals[i];
+                if (card == null) continue;
+                card.ownedLocally = IsLocalOwner(card.ownerPlayer);
+                if (card.pickup != null && !card.held && !card.moving && !card.awaitingUse)
+                    card.pickup.pickupable = card.ownedLocally;
+            }
             int fingerprint = dealer.roundNumber * 31 + dealer.trumpCount;
-            fingerprint = fingerprint * 31 + dealer.tableTrumpCount;
+            fingerprint = fingerprint * 31 + dealer.usedTrumpCount;
             fingerprint = fingerprint * 31 + (dealer.matchOver ? 1 : 0);
             for (int i = 0; i < dealer.trumpCount; i++)
             {
                 fingerprint = fingerprint * 31 + dealer.trumpType[i];
                 fingerprint = fingerprint * 31 + dealer.trumpOwner[i];
             }
-            for (int i = 0; i < dealer.tableTrumpCount; i++)
+            for (int i = 0; i < dealer.usedTrumpCount; i++)
             {
-                fingerprint = fingerprint * 31 + dealer.tableTrumpType[i];
-                fingerprint = fingerprint * 31 + dealer.tableTrumpOwner[i];
+                fingerprint = fingerprint * 31 + dealer.usedTrumpType[i];
+                fingerprint = fingerprint * 31 + dealer.usedTrumpOwner[i];
             }
             if (fingerprint != lastFingerprint)
             {
                 lastFingerprint = fingerprint;
                 RefreshVisuals();
             }
-            await Scheduler.Delay(0.15f);
-        }
     }
 
     public void RefreshVisuals()
@@ -72,6 +126,8 @@ private async Task WatchState()
         if (dealer == null || handVisuals == null || tableVisuals == null) return;
         if (lastRoundVisualized != dealer.roundNumber)
         {
+
+
             for (int i = 0; i < handVisuals.Length; i++)
             {
                 if (handVisuals[i] != null) Destroy(handVisuals[i].cardObject);
@@ -86,13 +142,14 @@ private async Task WatchState()
         }
         for (int player = 0; player < 2; player++)
         {
-            int count = dealer.TrumpCountInHand(player);
+            int count = CountInHand(player);
             int capacity = dealer.maxTrumpsPerPlayer;
             for (int index = 0; index < capacity; index++)
             {
                 int key = player * capacity + index;
-                int type = index < count ? dealer.TrumpAt(player, index) : 0;
+                int type = index < count ? TypeInHand(player, index) : 0;
                 TarotPickup existing = handVisuals[key];
+                if (existing != null && existing.awaitingUse) continue;
                 if (existing != null && existing.tarotType != type)
                 {
                     if (!existing.pendingUse) Destroy(existing.cardObject);
@@ -109,11 +166,11 @@ private async Task WatchState()
         }
 
         int[] positions = new int[2];
-        int countOnTable = Mathf.Min(dealer.tableTrumpCount, tableVisuals.Length);
+        int countOnTable = Mathf.Min(dealer.usedTrumpCount, tableVisuals.Length);
         for (int i = 0; i < tableVisuals.Length; i++)
         {
-            int type = i < countOnTable ? dealer.tableTrumpType[i] : 0;
-            int owner = i < countOnTable ? dealer.tableTrumpOwner[i] : 0;
+            int type = i < countOnTable ? dealer.usedTrumpType[i] : 0;
+            int owner = i < countOnTable ? dealer.usedTrumpOwner[i] : 0;
             TarotPickup existing = tableVisuals[i];
             if (existing != null && (existing.tarotType != type || existing.ownerPlayer != owner))
             {
@@ -127,22 +184,23 @@ private async Task WatchState()
             Quaternion rotation = HandRotation(owner);
             if (existing == null)
             {
-                bool fromDrop = lastDroppedCard != null && lastDropType == type
+                bool fromDrop = lastDropType == type
                     && lastDropOwner == owner && Time.time - lastDropTime < 2f;
                 Vector3 start = fromDrop ? lastDropPosition : destination;
-                if (fromDrop)
+                if (fromDrop && lastDroppedCard != null)
                 {
-                    Destroy(lastDroppedCard.cardObject);
+                    tableVisuals[i] = lastDroppedCard;
                     lastDroppedCard = null;
+                    continue;
                 }
                 TarotPickup created = CreateCard(owner, ownerPosition, type, true, start, rotation);
                 tableVisuals[i] = created;
-                if (created != null && fromDrop) created.MoveTo(destination, rotation, false);
+                if (created != null && fromDrop) MoveCard(created, destination, rotation, false);
             }
-            else if (!existing.moving)
+            else if (!existing.moving && !existing.held)
             {
-                existing.cardTransform.position = destination;
-                existing.cardTransform.rotation = rotation;
+                existing.homePosition = destination;
+                existing.homeRotation = rotation;
             }
         }
     }
@@ -160,23 +218,32 @@ private async Task WatchState()
         }
         Material face = tarotMaterials != null && type > 0 && type <= tarotMaterials.Length
             ? tarotMaterials[type - 1] : null;
-        pickup.Configure(this, owner, index, type, placed, face, position, rotation,
-            TrumpSymbol(type), TrumpDescription(type), IsLocalOwner(owner));
-        card.name = (placed ? "TarotTable_" : "TarotHand_") + owner + "_" + index + "_" + dealer.TrumpName(type);
+        pickup.visuals = this;
+        pickup.ownerPlayer = owner; pickup.handIndex = index; pickup.tarotType = type;
+        pickup.onTable = placed; pickup.face = face;
+        pickup.homePosition = position; pickup.homeRotation = rotation;
+        pickup.symbol = TrumpSymbol(type); pickup.description = TrumpDescription(type);
+        pickup.ownedLocally = IsLocalOwner(owner);
+        pickup.Configure();
+        card.name = (placed ? "TarotTable_" : "TarotHand_") + owner + "_" + index + "_" + type;
         return pickup;
     }
 
     public bool IsLocalOwner(int player)
     {
-        return dealer != null && dealer.IsLocalPlayer(player);
+        return slotObjects != null && player >= 0 && player < slotObjects.Length
+            && slotObjects[player] != null && Utilities.IsValid(Networking.LocalPlayer)
+            && Networking.IsOwner(Networking.LocalPlayer, slotObjects[player]);
     }
 
-    public void CardDropped(TarotPickup card)
+    public void CardDropped()
     {
-        if (card == null || card.onTable || card.pendingUse) return;
+        TarotPickup card = incomingDroppedCard;
+        if (card == null || card.onTable || card.pendingUse || card.awaitingUse) return;
+        if (pendingCard != null) { card.ReturnHome(); return; }
         if (!IsLocalOwner(card.ownerPlayer) || !dealer.CanLocalPlayerAct()
             || dealer.turnIndex != card.ownerPlayer
-            || dealer.TrumpAt(card.ownerPlayer, card.handIndex) != card.tarotType)
+            || TypeInHand(card.ownerPlayer, card.handIndex) != card.tarotType)
         {
             card.ReturnHome();
             return;
@@ -190,17 +257,43 @@ private async Task WatchState()
             card.ReturnHome();
             return;
         }
-        lastDroppedCard = card;
-        lastDropPosition = card.cardTransform.position;
-        lastDropType = card.tarotType;
-        lastDropOwner = card.ownerPlayer;
-        lastDropTime = Time.time;
-        int ownerPosition = 0;
-        for (int i = 0; i < dealer.tableTrumpCount; i++)
-            if (dealer.tableTrumpOwner[i] == card.ownerPlayer) ownerPosition++;
-        card.MoveTo(TablePosition(card.ownerPlayer, ownerPosition),
-            HandRotation(card.ownerPlayer), true);
-        dealer.RequestUseTrump(card.handIndex);
+        pendingCard = card;
+        pendingOwner = card.ownerPlayer;
+        pendingEpoch = dealer.actionEpoch;
+        pendingSince = Time.time;
+        card.awaitingUse = true;
+        card.moving = false;
+        if (card.pickup != null) card.pickup.pickupable = false;
+        if (card.cardCollider != null) card.cardCollider.enabled = false;
+        dealer.incomingTrumpHandIndex = card.handIndex;
+        dealer.RequestUseTrumpFromCard();
+        PlayerSlot slot = slotObjects[pendingOwner].GetComponent<PlayerSlot>();
+        pendingSequence = slot != null ? slot.ActionSeq : -1;
+    }
+
+    private void MoveCard(TarotPickup card, Vector3 destination, Quaternion rotation, bool consumed)
+    {
+        card.incomingDestination = destination;
+        card.incomingRotation = rotation;
+        card.incomingConsumed = consumed;
+        card.ApplyMove();
+    }
+    private int CountInHand(int player)
+    {
+        int count = 0;
+        for (int i = 0; i < dealer.trumpCount; i++) if (dealer.trumpOwner[i] == player) count++;
+        return count;
+    }
+    private int TypeInHand(int player, int index)
+    {
+        int seen = 0;
+        for (int i = 0; i < dealer.trumpCount; i++)
+        {
+            if (dealer.trumpOwner[i] != player) continue;
+            if (seen == index) return dealer.trumpType[i];
+            seen++;
+        }
+        return 0;
     }
 
     private Vector3 HandPosition(int player, int index)
@@ -209,7 +302,7 @@ private async Task WatchState()
         Bounds bounds = spawn.bounds;
         Collider platform = spawn.transform.parent != null
             ? spawn.transform.parent.GetComponent<Collider>() : null;
-        float surfaceY = platform != null ? platform.bounds.max.y : bounds.min.y;
+        float surfaceY = platform != null ? platform.bounds.max.y : bounds.center.y;
         BoxCollider prefabCollider = tarotPrefab.GetComponent<BoxCollider>();
         float halfCardHeight = prefabCollider != null
             ? prefabCollider.size.y * tarotPrefab.transform.localScale.y * 0.5f : 0.005f;
@@ -262,7 +355,7 @@ private async Task WatchState()
 
     public string TrumpDescription(int type)
     {
-        string name = dealer.TrumpName(type);
+        string name = TrumpSymbol(type);
         string effect = "";
         if (type >= 1 && type <= 6) effect = "Compra o numero " + (type + 1) + " se estiver no baralho.";
         else if (type == 7) effect = "Muda o alvo para 17.";
@@ -287,3 +380,5 @@ private async Task WatchState()
         return name + "\n" + effect;
     }
 }
+
+

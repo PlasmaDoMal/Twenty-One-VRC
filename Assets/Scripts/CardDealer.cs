@@ -39,6 +39,37 @@ using VRC.Udon.Common.Interfaces;
 [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
 public class CardDealer : MenSharpBehaviour
 {
+    public bool preserveLobbySlots;
+
+    public void PrepareLobbySession()
+    {
+        if (!IsDeckOwner()) return;
+        AbortMatch();
+        matchStarterPlayerId = 0;
+    }
+    public void AbortMatch()
+    {
+        if (!IsDeckOwner()) return;
+        actionEpoch++;
+        ClearHand();
+        logCount = 0; logApplied = 0;
+        logStructureRevision++;
+        trumpCount = 0; tableTrumpCount = 0; usedTrumpCount = 0;
+        matchStarted = false; matchOver = false; roundResolving = false;
+        turnSecondsLeft = 0; turnDeadline = 0f;
+        RequestSerialization();
+        NotifyTurnChanged();
+    }
+
+    public void OnOwnershipTransferred(VRCPlayerApi player)
+    {
+        if (!IsDeckOwner()) return;
+        slotSeqSeen = new int[slots.Length];
+        for (int i = 0; i < slots.Length; i++) slotSeqSeen[i] = processedActionSeq[i];
+        turnDeadline = turnSecondsLeft > 0 ? Time.time + turnSecondsLeft : 0f;
+        NotifyTurnChanged();
+    }
+
     // IDs estaveis para UI e rede. 1..6 representam as cartas numericas 2..7.
     public const int TrumpGo17 = 7, TrumpGo24 = 8, TrumpGo27 = 9;
     public const int TrumpOneUp = 10, TrumpTwoUp = 11, TrumpShield = 12;
@@ -83,6 +114,10 @@ public class CardDealer : MenSharpBehaviour
     public int deckMaxValue = 11;
 
     [Tooltip("Semente do embaralhamento. E sincronizada, entao todo mundo monta a mesma ordem; o dono sorteia uma nova por rodada.")]
+    [UdonSynced] public int actionEpoch;
+    [UdonSynced] public int[] processedActionSeq = new int[2];
+    [UdonSynced] public int[] processedActionEpoch = new int[2];
+    [UdonSynced] public int[] acceptedActionSeq = new int[2];
     [UdonSynced] public int deckSeed = 12345;
 
     [Header("Network")]
@@ -157,8 +192,8 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Duas passadas seguidas encerram a rodada. E a regra do original.")]
     public bool twoStaysEndRound = true;
 
-    [Tooltip("Segundos para agir antes de perder por tempo. 0 desliga o timeout enquanto nao houver visual para a carta de gancho.")]
-    public float turnTimeoutSeconds = 0f;
+    [Tooltip("Segundos para agir antes de receber o gancho por tempo. 0 desliga o timeout. A TV CRT mostra esta contagem.")]
+    public float turnTimeoutSeconds = 60f;
 
     [Tooltip("Cartas de tarot que cada jogador recebe por rodada.")]
     public int trumpCardsPerRound = 2;
@@ -231,6 +266,10 @@ public class CardDealer : MenSharpBehaviour
     [UdonSynced] public int[] tableTrumpType;
     [UdonSynced] public int[] tableTrumpOwner;
     [UdonSynced] public int tableTrumpCount = 0;
+    // Presentation history is separate from the trumps whose effects remain active.
+    [UdonSynced] public int[] usedTrumpType = new int[64];
+    [UdonSynced] public int[] usedTrumpOwner = new int[64];
+    [UdonSynced] public int usedTrumpCount;
     [UdonSynced] public int baseBet = 1;
     [UdonSynced] public int hookMask = 0;
 
@@ -243,6 +282,24 @@ public class CardDealer : MenSharpBehaviour
     [UdonSynced] public int consecutiveStays = 0;
     [UdonSynced] public int[] life;
     [UdonSynced] public bool matchOver = false;
+
+    // Segundos inteiros que faltam no turno, para os mostradores locais (as TVs
+    // CRT). So o dono escreve, junto da contagem; 0 = fora de uma contagem
+    // valendo. Como o valor viaja pela rede, todos os clientes desenham o mesmo
+    // MM:SS sem depender do proprio relogio.
+    [UdonSynced] public int turnSecondsLeft = 0;
+
+    // Vencedor da ultima rodada (0 ou 1), para a TV mostrar YouWon/YouLost a
+    // partir de quem venceu. -1 = sem resultado (inicio da partida, empate ou
+    // espectador). Diferente de roundWinner, este NAO e limpo no StartRound, so
+    // no proximo FinishRound (ou no StartMatch), entao o resultado continua a
+    // vista enquanto a rodada seguinte ainda distribui as cartas.
+    [UdonSynced] public int lastRoundWinner = -1;
+    [UdonSynced] public bool roundResolving;
+    [UdonSynced] public double roundEndAt;
+    [UdonSynced] public int lastTimeoutPlayer = -1;
+    [UdonSynced] public int resolvedBet;
+    public float resultDisplaySeconds = 3f;
 
     // Ultima jogada processada de cada Slot. E o que impede a mesma intencao de
     // ser executada duas vezes, sem precisar limpar nada no Slot.
@@ -267,7 +324,7 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     public bool TurnIsActionable()
     {
-        if (!matchStarted || matchOver)
+        if (!matchStarted || matchOver || roundResolving)
         {
             return false;
         }
@@ -424,8 +481,26 @@ public class CardDealer : MenSharpBehaviour
         return sum;
     }
 
+    [HideInInspector] public float nextCardVisibilityRefresh;
+
+    public void Update()
+    {
+        if (Time.time < nextCardVisibilityRefresh) return;
+        nextCardVisibilityRefresh = Time.time + 0.2f;
+        RefreshCardVisibility();
+    }
+
+    /// <summary>Only the local hand owner sees a hidden face before the result.</summary>
+    public void RefreshCardVisibility()
+    {
+        for (int i = 0; i < hand.Count; i++)
+            if (hand[i] != null)
+                ApplyCardMaterial(hand[i], cardValue[i], special[i], handOf[i]);
+    }
+
     public void Start()
     {
+        nextCardVisibilityRefresh = 0f;
         RefreshScores();
         Scheduler.Run(() => WatchSlots());
         // Fecha a partida que ja estava valendo quando este cliente entrou, para
@@ -592,11 +667,12 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void StartRound()
     {
-        if (!matchStarted || matchOver)
+        if (!matchStarted || matchOver || roundResolving)
         {
             return;
         }
 
+        actionEpoch++;
         if (!NewSeed())
         {
             EndMatch(-1);
@@ -610,6 +686,7 @@ public class CardDealer : MenSharpBehaviour
         consecutiveStays = 0;
         hookMask = 0;
         tableTrumpCount = 0;
+        usedTrumpCount = 0;
         EnsureTrumpBuffers();
         if (clearTrumpsEachRound)
         {
@@ -619,6 +696,7 @@ public class CardDealer : MenSharpBehaviour
         // a rodada contada em diante: StartMatch zera antes de chamar, e
         // FinishRound chama este metodo no fim de cada rodada, entao o numero
         // que aparece no log e sempre o da rodada que esta começando
+        roundResolving = false;
         roundNumber++;
         turnIndex = 0;
         currentPlayer = 0;
@@ -683,6 +761,9 @@ public class CardDealer : MenSharpBehaviour
         // primeira rodada ser a 1
         roundNumber = 0;
         roundWinner = -1;
+        lastRoundWinner = -1;
+        lastTimeoutPlayer = -1;
+        roundResolving = false;
         EnsureLife();
         for (int i = 0; i < life.Length; i++)
         {
@@ -751,6 +832,20 @@ public class CardDealer : MenSharpBehaviour
             return IsDeckOwner();
         }
         return local.playerId == matchStarterPlayerId;
+    }
+
+    /// <summary>
+    /// O jogador local manda no baralho? E o que separa "criar partida" de
+    /// "entrar partida" no menu: quem tem o baralho arbitra a partida inteira,
+    /// e os demais so ocupam uma vaga.
+    ///
+    /// Publico porque o menu vive em outro programa Udon, e um programa so
+    /// alcanca o outro pelos membros publicos — o <c>gameObject</c> de outro
+    /// comportamento nao e acessivel de la.
+    /// </summary>
+    public bool LocalPlayerOwnsDeck()
+    {
+        return IsDeckOwner();
     }
 
     private bool MatchCanStart()
@@ -841,6 +936,7 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void AssignSlots()
     {
+        if (preserveLobbySlots) return;
         if (slots == null)
         {
             return;
@@ -1064,6 +1160,7 @@ public class CardDealer : MenSharpBehaviour
         {
             ApplyLog();
         }
+        RefreshCardVisibility();
         RefreshScores();
         NotifyTurnChanged();
     }
@@ -1486,6 +1583,15 @@ public class CardDealer : MenSharpBehaviour
         int globalIndex = TrumpGlobalIndex(player, handIndex);
         if (globalIndex < 0) return;
         int type = trumpType[globalIndex];
+        if (usedTrumpType == null || usedTrumpType.Length != 64) usedTrumpType = new int[64];
+        if (usedTrumpOwner == null || usedTrumpOwner.Length != 64) usedTrumpOwner = new int[64];
+        if (usedTrumpCount >= 64)
+        {
+            for (int i = 1; i < 64; i++) { usedTrumpType[i - 1] = usedTrumpType[i]; usedTrumpOwner[i - 1] = usedTrumpOwner[i]; }
+            usedTrumpCount = 63;
+        }
+        usedTrumpType[usedTrumpCount] = type;
+        usedTrumpOwner[usedTrumpCount++] = player;
         RemoveTrumpFromHand(globalIndex);
         consecutiveStays = 0;
         if (type >= 1 && type <= 6) OwnerDealNumber(player, type + 1, false);
@@ -1551,6 +1657,29 @@ public class CardDealer : MenSharpBehaviour
             ? Time.time + turnTimeoutSeconds : 0f;
     }
 
+    /// <summary>
+    /// Mantem <see cref="turnSecondsLeft"/> com o numero inteiro de segundos que
+    /// faltam no turno. Roda so no dono (ProcessSlots ja barrou os outros) e
+    /// reenvia quando o valor muda, entao os mostradores locais leem a mesma
+    /// contagem. Fora de uma contagem valendo vale 0, que e o "sem tempo".
+    /// </summary>
+    private void SyncTurnSecondsLeft()
+    {
+        int target = 0;
+        if (matchStarted && !matchOver && turnTimeoutSeconds > 0f
+            && openingDealt && !dealing && pendingFly.Count == 0
+            && turnDeadline > 0f)
+        {
+            float remain = turnDeadline - Time.time;
+            target = remain > 0f ? Mathf.CeilToInt(remain) : 0;
+        }
+        if (target != turnSecondsLeft)
+        {
+            turnSecondsLeft = target;
+            RequestSerialization();
+        }
+    }
+
     /// <summary>Duas passadas seguidas: vence quem parou mais perto do alvo, sem estourar.</summary>
     private void EndRoundByStays()
     {
@@ -1586,6 +1715,7 @@ public class CardDealer : MenSharpBehaviour
                 + a + " x " + b + " (alvo " + target + ")."
                 + (winner < 0 ? " Empatou." : " Venceu o jogador " + winner + "."));
         }
+        lastTimeoutPlayer = -1;
         FinishRound(winner);
     }
 
@@ -1595,10 +1725,13 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void FinishRound(int winner)
     {
+        actionEpoch++;
         roundWinner = winner;
+        lastRoundWinner = winner;
         consecutiveStays = 0;
         EnsureLife();
         int damage = CurrentBet();
+        resolvedBet = damage;
         bool blessSaved = false;
 
         if (winner < 0)
@@ -1631,13 +1764,12 @@ public class CardDealer : MenSharpBehaviour
         baseBet = blessSaved ? Mathf.Max(0, baseBet - 1)
             : Mathf.Max(0, baseBet + roundDamageGrowth);
 
+        roundResolving = true;
+        roundEndAt = Networking.GetServerTimeInSeconds() + Mathf.Max(1f, resultDisplaySeconds);
+        RevealRoundCards();
+        turnSecondsLeft = 0;
         RequestSerialization();
-        if (MatchFinished())
-        {
-            EndMatch(winner);
-            return;
-        }
-        StartRound();
+        NotifyTurnChanged();
     }
 
     /// <summary>A partida acabou por vida ou por limite de rodadas?</summary>
@@ -1673,6 +1805,12 @@ public class CardDealer : MenSharpBehaviour
         // A partida acabou: some com os dois menus de uma vez, sem esperar
         // qualquer virada de turno.
         NotifyTurnChanged();
+    }
+
+    private void RevealRoundCards()
+    {
+        for (int i = 0; i < hand.Count; i++)
+            if (hand[i] != null) ApplyCardMaterial(hand[i], cardValue[i], false, handOf[i]);
     }
 
     private void EnsureLife()
@@ -1742,6 +1880,8 @@ public class CardDealer : MenSharpBehaviour
     /// Usa a trump na posicao <paramref name="cardIndex"/> da mao local. O dono
     /// do baralho recusa se nao for a vez de quem jogou.
     /// </summary>
+    public int incomingTrumpHandIndex;
+    public void RequestUseTrumpFromCard() { RequestUseTrump(incomingTrumpHandIndex); }
 public void RequestUseTrump(int cardIndex)
     {
         if (!CanLocalPlayerAct())
@@ -1749,7 +1889,11 @@ public void RequestUseTrump(int cardIndex)
             if (logTurns) Debug.Log("CardDealer: tarot ignorada fora da vez do jogador local.");
             return;
         }
-        slots[turnIndex].RequestUseTrump(cardIndex);
+        int expectedIndex = TrumpGlobalIndex(turnIndex, cardIndex);
+        if (expectedIndex < 0) return;
+        slots[turnIndex].incomingTrumpType = trumpType[expectedIndex];
+        slots[turnIndex].incomingTrumpHandIndex = cardIndex;
+        slots[turnIndex].RequestUseTrumpFromCard();
     }
 
     /// <summary>Qual Slot e o do jogador local.</summary>
@@ -1780,6 +1924,16 @@ public void RequestUseTrump(int cardIndex)
         {
             return;
         }
+        if (roundResolving)
+        {
+            if (Networking.GetServerTimeInSeconds() >= roundEndAt)
+            {
+                if (MatchFinished()) { roundResolving = false; EndMatch(lastRoundWinner); }
+                else { roundResolving = false; StartRound(); }
+            }
+            return;
+        }
+        SyncTurnSecondsLeft();
         if (matchStarted && !matchOver && turnTimeoutSeconds > 0f
             && openingDealt && !dealing && pendingFly.Count == 0)
         {
@@ -1791,24 +1945,12 @@ public void RequestUseTrump(int cardIndex)
             {
                 if (logTurns)
                 {
-                    Debug.Log("CardDealer: jogador " + turnIndex + " recebeu o gancho por tempo.");
+                    Debug.Log("CardDealer: jogador " + turnIndex + " perdeu a rodada por tempo.");
                 }
-                hookMask |= 1 << turnIndex;
-                consecutiveStays = 0;
-                if (hookMask == 3)
-                {
-                    // Sem resposta de nenhum dos dois jogadores, nao reinicia
-                    // rodadas empatadas indefinidamente.
-                    EndMatch(-1);
-                    return;
-                }
-                AdvanceTurn(turnIndex);
+                lastTimeoutPlayer = turnIndex;
+                FinishRound(1 - turnIndex);
                 return;
             }
-        }
-        if (dealing || pendingFly.Count > 0)
-        {
-            return;
         }
         if (slots == null || slots.Length == 0)
         {
@@ -1837,6 +1979,13 @@ public void RequestUseTrump(int cardIndex)
                 Debug.Log("CardDealer: jogador " + i + " jogou " + slot.ActionType
                     + " na vez " + turnIndex + ".");
             }
+            processedActionSeq[i] = slot.ActionSeq;
+            processedActionEpoch[i] = slot.actionEpoch;
+            acceptedActionSeq[i] = -1;
+            RequestSerialization();
+            VRCPlayerApi sender = slot.OwnerPlayer();
+            if (slot.actionEpoch != actionEpoch || sender == null
+                || sender.playerId != slot.actionPlayerId) continue;
             int type = slot.ActionType;
             if (type == PlayerSlot.ActionStartMatch)
             {
@@ -1847,7 +1996,7 @@ public void RequestUseTrump(int cardIndex)
                 }
                 continue;
             }
-            if (!matchStarted || matchOver)
+            if (!matchStarted || matchOver || roundResolving || dealing || pendingFly.Count > 0)
             {
                 continue;
             }
@@ -1871,7 +2020,11 @@ public void RequestUseTrump(int cardIndex)
             }
             else if (type == PlayerSlot.ActionTrump)
             {
+                int index = TrumpGlobalIndex(i, arg);
+                if (index < 0 || trumpType[index] != slot.actionTrumpType) continue;
                 AcceptTrump(i, arg);
+                acceptedActionSeq[i] = slot.ActionSeq;
+                RequestSerialization();
             }
         }
     }
@@ -2036,7 +2189,7 @@ public void RequestUseTrump(int cardIndex)
         // Refresh; nao depende da casa atual depois de Remove ou Exchange.
         bool isSpecial = logHidden[entry] != 0;
         special.Add(isSpecial);
-        ApplyCardMaterial(card, value, isSpecial);
+        ApplyCardMaterial(card, value, isSpecial, target);
         if (logDeals)
         {
             Debug.Log("CardDealer: carta " + value + " -> jogador " + target
@@ -2059,14 +2212,15 @@ public void RequestUseTrump(int cardIndex)
     /// O Renderer e procurado em profundidade porque o mesh do prefab fica num
     /// filho, e nao no objeto raiz da carta.
     /// </summary>
-    private void ApplyCardMaterial(GameObject card, int value, bool isSpecial)
+    private void ApplyCardMaterial(GameObject card, int value, bool isSpecial, int ownerPlayer)
     {
         Renderer cardRenderer = card.GetComponentInChildren<Renderer>(true);
         if (cardRenderer == null)
         {
             return;
         }
-        if (isSpecial && hideSpecialCards && hiddenMaterial != null)
+        if (isSpecial && hideSpecialCards && !roundResolving
+            && !IsLocalPlayer(ownerPlayer) && hiddenMaterial != null)
         {
             cardRenderer.sharedMaterial = hiddenMaterial;
             return;

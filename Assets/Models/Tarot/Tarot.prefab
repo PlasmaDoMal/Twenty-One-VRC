@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.6156665, y: -0.87008655}
+  m_AnchoredPosition: {x: 0.04, y: 0.1}
   m_SizeDelta: {x: 20, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &9192826561673170379
@@ -108,7 +108,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 16777215
   m_fontColor: {r: 1, g: 1, b: 1, a: 0}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -126,14 +126,14 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 85
-  m_fontSizeBase: 85
+  m_fontSize: 50
+  m_fontSizeBase: 50
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -205,7 +205,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0.145}
+  m_AnchoredPosition: {x: -2.26, y: 0.145}
   m_SizeDelta: {x: 2, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &4300132526195078583
@@ -431,6 +431,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 590231668809899240}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2058405698683815792}
   m_SourcePrefab: {fileID: 100100000, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
 --- !u!1 &8550299595290114685 stripped
 GameObject:
@@ -503,7 +506,7 @@ MonoBehaviour:
   ExactGrip: {fileID: 0}
   allowManipulationWhenEquipped: 0
   orientation: 0
-  AutoHold: 0
+  AutoHold: 2
   InteractionText: Pegar tarot
   UseText: Use
   useEventBroadcastType: 0
@@ -550,8 +553,23 @@ MonoBehaviour:
   body: {fileID: 0}
   cardCollider: {fileID: 0}
   pickup: {fileID: 0}
-  textFadeVersion: 0
-  moveVersion: 0
+  face: {fileID: 0}
+  symbol: 
+  description: 
+  incomingDestination: {x: 0, y: 0, z: 0}
+  incomingRotation: {x: 0, y: 0, z: 0, w: 0}
+  incomingConsumed: 0
+  moveStart: {x: 0, y: 0, z: 0}
+  moveDestination: {x: 0, y: 0, z: 0}
+  moveStartRotation: {x: 0, y: 0, z: 0, w: 0}
+  moveDestinationRotation: {x: 0, y: 0, z: 0, w: 0}
+  moveElapsed: 0
+  fadeElapsed: 0
+  fadeStart: 0
+  fadeTarget: 0
+  fading: 0
+  moveDuration: 0.4
+  descriptionFadeDuration: 0.25
 --- !u!114 &590231668809899240
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -571,9 +589,34 @@ MonoBehaviour:
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 1
   Reliable: 0
-  _syncMethod: 0
+  _syncMethod: 2
   serializedProgramAsset: {fileID: 11400000, guid: 98e44e4cc6c9f98459b2575cb3691fb1, type: 2}
   programSource: {fileID: 0}
+  serializedPublicVariablesBytesString: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABgAAAAAAAAAABwUHBQ==
+  publicVariablesUnityEngineObjects: []
+  publicVariablesSerializationDataFormat: 0
+--- !u!114 &2058405698683815792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8550299595290114685}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  interactTextPlacement: {fileID: 0}
+  interactText: Use
+  interactTextGO: {fileID: 0}
+  proximity: 2
+  SynchronizePosition: 0
+  AllowCollisionOwnershipTransfer: 1
+  Reliable: 0
+  _syncMethod: 1
+  serializedProgramAsset: {fileID: 11400000, guid: 98e44e4cc6c9f98459b2575cb3691fb1, type: 2}
+  programSource: {fileID: 11400000, guid: 7c6719a2849c5024cb7cacdfde6aae83, type: 2}
   serializedPublicVariablesBytesString: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABgAAAAAAAAAABwUHBQ==
   publicVariablesUnityEngineObjects: []
   publicVariablesSerializationDataFormat: 0

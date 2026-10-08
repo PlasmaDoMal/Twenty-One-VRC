@@ -25,9 +25,9 @@ public class IntroMenuController : MenSharpBehaviour
     public Transform fixedMenuAnchor;
     public float followTurnThreshold = 25f;
     public float followTurnSpeed = 8f;
-    private float menuYaw;
-    private float targetYaw;
-    private bool movementLocked;
+    [HideInInspector] public float menuYaw;
+    [HideInInspector] public float targetYaw;
+    [HideInInspector] public bool movementLocked;
     public float fadeToBlackDuration = 0.8f;
     public float blackHoldDuration = 0.2f;
     public float postTeleportDelay = 0.1f;
@@ -35,35 +35,38 @@ public class IntroMenuController : MenSharpBehaviour
     public float menuRevealDuration = 0.4f;
     public LogoIntroAnimator logoAnimator;
     public float menuDistance = 1f;
-    private bool introReady;
+    [HideInInspector] public bool introReady;
     [HideInInspector] public bool introCompleted;
     // 0 Waiting, 1 Closing, 2 BlackHold, 3 TeleportPending, 4 Opening, 5 Complete.
     [HideInInspector] public int state;
-    private VRCPlayerApi localPlayer;
-    private Material fadeMaterial;
-    private float elapsed;
-    private float revealElapsed;
-    private bool initialized;
-    private bool respawnPending;
+    [HideInInspector] public VRCPlayerApi localPlayer;
+    [HideInInspector] public Material fadeMaterial;
+    [HideInInspector] public float elapsed;
+    [HideInInspector] public float revealElapsed;
+    [HideInInspector] public bool initialized;
+    [HideInInspector] public bool respawnPending;
 
     public void Start()
     {
+        initialized = false;
+        introCompleted = false;
+        state = 0;
+        elapsed = 0f;
+        revealElapsed = 0f;
+        movementLocked = false;
+        respawnPending = false;
         fadeMaterial = fadeRenderer.material;
         SetFade(0f);
         introMenuRoot.SetActive(true);
         blackoutRoot.SetActive(useFullscreenBackdrop);
         playButton.interactable = false;
         if (menuGroup != null) menuGroup.alpha = logoAnimator != null ? 1f : 0f;
-        Scheduler.Run(() => RunMenu());
+
     }
 
-    private async Task RunMenu()
+    public void Update()
     {
-        while (true)
-        {
-            TickMenu();
-            await Scheduler.NextFrame();
-        }
+        TickMenu();
     }
 
     private void TickMenu()
@@ -113,8 +116,12 @@ public class IntroMenuController : MenSharpBehaviour
             {
                 state = 3;
                 elapsed = 0f;
-                Scheduler.Run(() => TeleportAfterFrame());
+
             }
+        }
+        else if (state == 3)
+        {
+            TeleportUnderBlack();
         }
         else if (state == 4)
         {
@@ -137,7 +144,7 @@ public class IntroMenuController : MenSharpBehaviour
         if (immobilizeDuringTransition) { localPlayer.Immobilize(true); movementLocked = true; }
         if (logoAnimator != null) logoAnimator.StopIntro();
         playButton.interactable = false;
-        if (selectionIndicator != null) selectionIndicator.SetActive(false);
+        if (selectionIndicator != null && selectionIndicator != gameObject) selectionIndicator.SetActive(false);
         if (clickAudio != null && clickAudio.clip != null) clickAudio.Play();
         if (transitionAudio != null && transitionAudio.clip != null) transitionAudio.Play();
         introCompleted = true;
@@ -174,13 +181,13 @@ public class IntroMenuController : MenSharpBehaviour
     {
         if (state != 0 || !initialized || !introReady) return;
         if (logoAnimator != null) logoAnimator.HoverOn();
-        if (selectionIndicator != null) selectionIndicator.SetActive(true);
+        if (selectionIndicator != null && selectionIndicator != gameObject) selectionIndicator.SetActive(true);
         if (hoverAudio != null && hoverAudio.clip != null) hoverAudio.Play();
     }
     public void PlayExit()
     {
         if (logoAnimator != null) logoAnimator.HoverOff();
-        else if (selectionIndicator != null) selectionIndicator.SetActive(false);
+        else if (selectionIndicator != null && selectionIndicator != gameObject) selectionIndicator.SetActive(false);
     }
     public void OnPlayerRespawn(VRCPlayerApi player)
     {
@@ -249,7 +256,7 @@ public class IntroMenuController : MenSharpBehaviour
         blackoutRoot.transform.position = head;
         fadeRenderer.transform.position = head;
     }
-    private float Ease(float time, float duration)
+    [HideInInspector] public float Ease(float time, float duration)
     {
         float t = Mathf.Clamp01(time / Mathf.Max(0.001f, duration));
         return t * t * (3f - 2f * t);

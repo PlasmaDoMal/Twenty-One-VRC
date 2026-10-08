@@ -1,0 +1,4000 @@
+{
+  "date": "2026-10-07",
+  "environment": "Unity ClientSim with simulated guest; no real VRChat transport",
+  "tests": [
+    {
+      "type": 1,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 43,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1285082657,
+        "round": 1,
+        "count": 6,
+        "values": [
+          4,
+          1,
+          5,
+          9,
+          8,
+          7
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          1
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1285082657,
+        "round": 1,
+        "count": 7,
+        "values": [
+          4,
+          1,
+          5,
+          9,
+          8,
+          7,
+          2
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          1
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 5
+    },
+    {
+      "type": 2,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 43,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1645725970,
+        "round": 1,
+        "count": 6,
+        "values": [
+          5,
+          1,
+          9,
+          2,
+          4,
+          10
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          2
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1645725970,
+        "round": 1,
+        "count": 7,
+        "values": [
+          5,
+          1,
+          9,
+          2,
+          4,
+          10,
+          3
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          2
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 3,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 43,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 551908787,
+        "round": 1,
+        "count": 6,
+        "values": [
+          5,
+          2,
+          3,
+          11,
+          1,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          3
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 551908787,
+        "round": 1,
+        "count": 7,
+        "values": [
+          5,
+          2,
+          3,
+          11,
+          1,
+          6,
+          4
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          3
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 2
+    },
+    {
+      "type": 4,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 43,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1742744603,
+        "round": 1,
+        "count": 6,
+        "values": [
+          6,
+          11,
+          9,
+          8,
+          1,
+          2
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          4
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1742744603,
+        "round": 1,
+        "count": 7,
+        "values": [
+          6,
+          11,
+          9,
+          8,
+          1,
+          2,
+          5
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          4
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 5
+    },
+    {
+      "type": 5,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 43,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1617162741,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          4,
+          7,
+          10,
+          8,
+          3
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          5
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1617162741,
+        "round": 1,
+        "count": 7,
+        "values": [
+          1,
+          4,
+          7,
+          10,
+          8,
+          3,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          5
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 6,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 43,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1387878718,
+        "round": 1,
+        "count": 6,
+        "values": [
+          3,
+          4,
+          1,
+          8,
+          6,
+          5
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          6
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1387878718,
+        "round": 1,
+        "count": 7,
+        "values": [
+          3,
+          4,
+          1,
+          8,
+          6,
+          5,
+          7
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          6
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 7,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 24,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 17,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 2123474143,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          7
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 1,
+        "tableTypes": [
+          8
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 2123474143,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          7
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          7
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 8,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 24,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 24,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1676796804,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          8
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 1,
+        "tableTypes": [
+          8
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1676796804,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          8
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          8
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 9,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 24,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 27,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1986389282,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          9
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 1,
+        "tableTypes": [
+          8
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1986389282,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          9
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          9
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 10,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 26,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 4
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1636044951,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          10
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1636044951,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          10
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          10
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 11,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 26,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 5
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 549532490,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          11
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 549532490,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          11
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          11
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 12,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 23,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 2
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1395302753,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          12
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1395302753,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          12
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          12
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 13,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 24,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1305330824,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          13
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1305330824,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          13
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          13
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 14,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 27,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 3
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1671641695,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          14
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1671641695,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          14
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          14
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 3,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 15,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 33,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 2
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1938316237,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          15
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1938316237,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          14
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 1,
+        "tableTypes": [
+          15
+        ],
+        "tableOwners": [
+          0
+        ],
+        "used": 1,
+        "usedTypes": [
+          15
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 16,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 39,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 2
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 2133638783,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          16
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 2,
+        "tableTypes": [
+          10,
+          11
+        ],
+        "tableOwners": [
+          1,
+          1
+        ],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 2133638783,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 1,
+        "tableTypes": [
+          10
+        ],
+        "tableOwners": [
+          1
+        ],
+        "used": 1,
+        "usedTypes": [
+          16
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 17,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 37,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 2
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 746120834,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          17
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 2,
+        "tableTypes": [
+          10,
+          11
+        ],
+        "tableOwners": [
+          1,
+          1
+        ],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 746120834,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          8
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 1,
+        "tableTypes": [
+          10
+        ],
+        "tableOwners": [
+          1
+        ],
+        "used": 1,
+        "usedTypes": [
+          17
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 18,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 29,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1768547675,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          18
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1768547675,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 4,
+        "trumpTypes": [
+          16,
+          15,
+          1,
+          3
+        ],
+        "trumpOwners": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          18
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 19,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 37,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 21,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 551554956,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          19
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 551554956,
+        "round": 1,
+        "count": 7,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          19
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 20,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 39,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 19,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 2073262503,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          20
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 2073262503,
+        "round": 1,
+        "count": 7,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          20
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 21,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 37,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 19,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 932080621,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          21
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 932080621,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          21
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 22,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 37,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 19,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 389857714,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          22
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 389857714,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          0,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          22
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 23,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 36,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 19,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 779518048,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          23
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 779518048,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          1,
+          0
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          23
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 24,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 31,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 19,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 132635589,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          24
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 132635589,
+        "round": 1,
+        "count": 7,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          24
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    },
+    {
+      "type": 25,
+      "pass": true,
+      "scenario": "native pickup/drop with controlled fixtures",
+      "visual": {
+        "alpha": 1,
+        "text": 39,
+        "material": true
+      },
+      "table": {
+        "onTable": true,
+        "moving": false,
+        "distance": 0
+      },
+      "derived": {
+        "target": 19,
+        "bet": 1
+      },
+      "basic": true,
+      "effect": true,
+      "before": {
+        "ready": true,
+        "seed": 1051333031,
+        "round": 1,
+        "count": 6,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        "active": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "trumpCount": 1,
+        "trumpTypes": [
+          25
+        ],
+        "trumpOwners": [
+          0
+        ],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 0,
+        "usedTypes": [],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "after": {
+        "ready": true,
+        "seed": 1051333031,
+        "round": 1,
+        "count": 8,
+        "values": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "owners": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "active": [
+          0,
+          1,
+          0,
+          1,
+          0,
+          1,
+          1,
+          1
+        ],
+        "hidden": [
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ],
+        "trumpCount": 0,
+        "trumpTypes": [],
+        "trumpOwners": [],
+        "tableCount": 0,
+        "tableTypes": [],
+        "tableOwners": [],
+        "used": 1,
+        "usedTypes": [
+          25
+        ],
+        "life": [
+          3,
+          3
+        ],
+        "baseBet": 1,
+        "hook": 0
+      },
+      "restarts": 1
+    }
+  ],
+  "visibility": {
+    "player1": {
+      "cards": [
+        {
+          "player": 0,
+          "value": 1,
+          "special": true,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-1"
+        },
+        {
+          "player": 0,
+          "value": 3,
+          "special": false,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-3"
+        },
+        {
+          "player": 0,
+          "value": 5,
+          "special": false,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-5"
+        },
+        {
+          "player": 1,
+          "value": 2,
+          "special": true,
+          "localOwner": false,
+          "back": true,
+          "correctFace": false,
+          "material": "card-hidden"
+        },
+        {
+          "player": 1,
+          "value": 4,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-4"
+        },
+        {
+          "player": 1,
+          "value": 6,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-6"
+        }
+      ],
+      "ownerIds": [
+        1,
+        2
+      ],
+      "resolving": false
+    },
+    "player2": {
+      "cards": [
+        {
+          "player": 0,
+          "value": 1,
+          "special": true,
+          "localOwner": false,
+          "back": true,
+          "correctFace": false,
+          "material": "card-hidden"
+        },
+        {
+          "player": 0,
+          "value": 3,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-3"
+        },
+        {
+          "player": 0,
+          "value": 5,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-5"
+        },
+        {
+          "player": 1,
+          "value": 2,
+          "special": true,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-2"
+        },
+        {
+          "player": 1,
+          "value": 4,
+          "special": false,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-4"
+        },
+        {
+          "player": 1,
+          "value": 6,
+          "special": false,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-6"
+        }
+      ],
+      "ownerIds": [
+        2,
+        1
+      ],
+      "resolving": false
+    },
+    "spectator": {
+      "cards": [
+        {
+          "player": 0,
+          "value": 1,
+          "special": true,
+          "localOwner": false,
+          "back": true,
+          "correctFace": false,
+          "material": "card-hidden"
+        },
+        {
+          "player": 0,
+          "value": 3,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-3"
+        },
+        {
+          "player": 0,
+          "value": 5,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-5"
+        },
+        {
+          "player": 1,
+          "value": 2,
+          "special": true,
+          "localOwner": false,
+          "back": true,
+          "correctFace": false,
+          "material": "card-hidden"
+        },
+        {
+          "player": 1,
+          "value": 4,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-4"
+        },
+        {
+          "player": 1,
+          "value": 6,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-6"
+        }
+      ],
+      "ownerIds": [
+        2,
+        2
+      ],
+      "resolving": false
+    },
+    "result": {
+      "cards": [
+        {
+          "player": 0,
+          "value": 1,
+          "special": true,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-1"
+        },
+        {
+          "player": 0,
+          "value": 3,
+          "special": false,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-3"
+        },
+        {
+          "player": 0,
+          "value": 5,
+          "special": false,
+          "localOwner": true,
+          "back": false,
+          "correctFace": true,
+          "material": "card-5"
+        },
+        {
+          "player": 1,
+          "value": 2,
+          "special": true,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-2"
+        },
+        {
+          "player": 1,
+          "value": 4,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-4"
+        },
+        {
+          "player": 1,
+          "value": 6,
+          "special": false,
+          "localOwner": false,
+          "back": false,
+          "correctFace": true,
+          "material": "card-6"
+        }
+      ],
+      "ownerIds": [
+        1,
+        2
+      ],
+      "resolving": true
+    }
+  },
+  "revealAndBless": {
+    "hiddenAfter": 0,
+    "correctFaces": 6,
+    "materials": [
+      "card-1",
+      "card-3",
+      "card-5",
+      "card-2",
+      "card-4",
+      "card-6"
+    ],
+    "resolving": true,
+    "life": [
+      1,
+      3
+    ],
+    "baseBet": 2,
+    "winner": 1,
+    "timeout": 0,
+    "actionable": false
+  },
+  "runtimeSyncMetadata": [
+    {
+      "name": "TarotHand_0_0_13",
+      "program": "TarotPickup",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "TarotHand_0_0_17",
+      "program": "TarotPickup",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "BtnJoinBack",
+      "program": "MenuButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Screen_join",
+      "program": "MenuScreen",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "BtnCreateBack",
+      "program": "MenuButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Screen_create",
+      "program": "MenuScreen",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Screen_main",
+      "program": "MenuScreen",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Content",
+      "program": "MatchLobby",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Tarot",
+      "program": "TarotVisuals",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitArea",
+      "program": "HoverText",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "StayButton3D",
+      "program": "ChoiceButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "StayButton3D",
+      "program": "FadeRise",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitArea",
+      "program": "HoverText",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitButton3D",
+      "program": "ChoiceButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitButton3D",
+      "program": "FadeRise",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Player2_Choices",
+      "program": "TurnFadeIn",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Player2_Choices",
+      "program": "OwnerOnlyUIVisibility",
+      "mode": "Continuous",
+      "synced": []
+    },
+    {
+      "name": "HitArea",
+      "program": "HoverText",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "StayButton3D",
+      "program": "ChoiceButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "StayButton3D",
+      "program": "FadeRise",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitArea",
+      "program": "HoverText",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitButton3D",
+      "program": "ChoiceButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "HitButton3D",
+      "program": "FadeRise",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Player1_Choices",
+      "program": "TurnFadeIn",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "Player1_Choices",
+      "program": "OwnerOnlyUIVisibility",
+      "mode": "Continuous",
+      "synced": []
+    },
+    {
+      "name": "PlayerSlot-1",
+      "program": "PlayerSlot",
+      "mode": "Manual",
+      "synced": [
+        "actionSeq",
+        "actionType",
+        "actionArg"
+      ]
+    },
+    {
+      "name": "PlayerSlot-0",
+      "program": "PlayerSlot",
+      "mode": "Manual",
+      "synced": [
+        "actionSeq",
+        "actionType",
+        "actionArg"
+      ]
+    },
+    {
+      "name": "ScoreCube-Player2",
+      "program": "OwnerOnlyVisibility",
+      "mode": "Continuous",
+      "synced": []
+    },
+    {
+      "name": "ScoreCube-Player1",
+      "program": "OwnerOnlyVisibility",
+      "mode": "Continuous",
+      "synced": []
+    },
+    {
+      "name": "CardDealer",
+      "program": "MatchHUD",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "CardDealer",
+      "program": "CRTScreenTimer",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "MenSharp.Statics",
+      "program": "MenSharp.Statics",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "WorldMatchRuntime",
+      "program": "WorldMatchSession",
+      "mode": "Manual",
+      "synced": [
+        "hostId",
+        "guestId",
+        "launchEpoch",
+        "launching",
+        "startAt"
+      ]
+    },
+    {
+      "name": "Content",
+      "program": "MenuRouter",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "BtnStart",
+      "program": "MenuButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "BtnJoin",
+      "program": "MenuButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "BtnCreate",
+      "program": "MenuButton",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "IntroMenuController",
+      "program": "LogoIntroAnimator",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "IntroMenuController",
+      "program": "IntroMenuController",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "CardDealer",
+      "program": "CardDealer",
+      "mode": "Manual",
+      "synced": [
+        "deckSeed",
+        "currentPlayer",
+        "logCount",
+        "logValue",
+        "logOwner",
+        "logActive",
+        "logHidden",
+        "logStructureRevision",
+        "trumpType",
+        "trumpOwner",
+        "trumpCount",
+        "tableTrumpType",
+        "tableTrumpOwner",
+        "tableTrumpCount",
+        "usedTrumpType",
+        "usedTrumpOwner",
+        "usedTrumpCount",
+        "baseBet",
+        "hookMask",
+        "turnIndex",
+        "matchStarted",
+        "roundNumber",
+        "matchStarterPlayerId",
+        "consecutiveStays",
+        "life",
+        "matchOver",
+        "turnSecondsLeft",
+        "lastRoundWinner",
+        "roundResolving",
+        "roundEndAt",
+        "lastTimeoutPlayer",
+        "resolvedBet"
+      ]
+    },
+    {
+      "name": "VRCWorld",
+      "program": "VRCWorldSettings",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "VRCWorld",
+      "program": "AvatarScalingSettings",
+      "mode": "None",
+      "synced": []
+    },
+    {
+      "name": "VRCWorld",
+      "program": "WorldQualitySettings",
+      "mode": "None",
+      "synced": []
+    }
+  ],
+  "notes": [
+    "Earlier Reincarnation failure was a test fixture with 16 entries instead of configured capacity 32; source rule retained.",
+    "Earlier Friendship visual query could select a newly drawn hand card with the same type; query corrected.",
+    "Tarot idle pose fixed using cardTransform position/rotation setters.",
+    "Actual VRChat multi-client transport, latency and ownership transfer remain untested."
+  ]
+}

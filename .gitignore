@@ -106,3 +106,8 @@ $RECYCLE.BIN/
 # Gerada pelo proprio VS Code, e da preferences da maquina de quem comitou.
 .vscode/
 
+
+# Estado local das ferramentas de desenvolvimento
+/.opencode/
+/Thry/persistent_data
+/Assets/_LastBuild.meta

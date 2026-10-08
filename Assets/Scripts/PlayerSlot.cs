@@ -159,6 +159,13 @@ public class PlayerSlot : MenSharpBehaviour
     /// Envia a intencao de usar a trump na posicao
     /// <paramref name="cardIndex"/> da propria mao (comecando em zero).
     /// </summary>
+    public CardDealer dealer;
+    [UdonSynced] public int actionEpoch;
+    [UdonSynced] public int actionPlayerId;
+    [UdonSynced] public int actionTrumpType;
+    public int incomingTrumpType;
+    public int incomingTrumpHandIndex;
+    public void RequestUseTrumpFromCard() { RequestUseTrump(incomingTrumpHandIndex); }
     public void RequestUseTrump(int cardIndex)
     {
         Send(ActionTrump, cardIndex);
@@ -174,6 +181,10 @@ public class PlayerSlot : MenSharpBehaviour
             }
             return;
         }
+        if (dealer == null) return;
+        actionEpoch = dealer.actionEpoch;
+        actionPlayerId = Networking.LocalPlayer != null ? Networking.LocalPlayer.playerId : 0;
+        actionTrumpType = type == ActionTrump ? incomingTrumpType : 0;
         actionType = type;
         actionArg = arg;
         actionSeq++;
@@ -211,3 +222,4 @@ public class PlayerSlot : MenSharpBehaviour
         playerName = slotPlayerName == null ? "" : slotPlayerName;
     }
 }
+

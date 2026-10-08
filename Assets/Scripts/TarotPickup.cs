@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using MenSharp;
 using TMPro;
 using UnityEngine;
@@ -10,160 +9,145 @@ public class TarotPickup : MenSharpBehaviour
     public GameObject cardObject;
     public Transform cardTransform;
     public TarotVisuals visuals;
-    public int ownerPlayer;
-    public int handIndex;
-    public int tarotType;
-    public bool onTable;
-    public bool ownedLocally;
-    public bool held;
-    public bool pendingUse;
-    public bool moving;
+    public int ownerPlayer, handIndex, tarotType;
+    public bool onTable, ownedLocally, held, pendingUse, moving, awaitingUse;
     public Vector3 homePosition;
     public Quaternion homeRotation;
-    public TextMeshPro descriptionText;
-    public TextMeshPro logoText;
+    public TextMeshPro descriptionText, logoText;
     public MeshRenderer cardRenderer;
     public Rigidbody body;
     public BoxCollider cardCollider;
     public VRCPickup pickup;
-    public int textFadeVersion;
-    public int moveVersion;
+    public Material face;
+    public string symbol, description;
+    public Vector3 incomingDestination;
+    public Quaternion incomingRotation;
+    public bool incomingConsumed;
+    public Vector3 moveStart, moveDestination;
+    public Quaternion moveStartRotation, moveDestinationRotation;
+    public float moveElapsed, fadeElapsed, fadeStart, fadeTarget;
+    public bool fading;
+    public float moveDuration = 0.4f, descriptionFadeDuration = 0.25f;
 
-    public void Configure(TarotVisuals source, int owner, int index, int type, bool placed,
-        Material face, Vector3 home, Quaternion rotation, string symbol, string description,
-        bool localOwner)
+    // Cross-behaviour calls use fields and parameterless events in MenSharp.
+    public void Configure()
     {
         cardObject = gameObject;
         cardTransform = transform;
-        visuals = source;
-        ownerPlayer = owner;
-        handIndex = index;
-        tarotType = type;
-        onTable = placed;
-        ownedLocally = localOwner;
-        homePosition = home;
-        homeRotation = rotation;
         body = GetComponent<Rigidbody>();
         cardCollider = GetComponent<BoxCollider>();
         pickup = GetComponent<VRCPickup>();
         cardRenderer = GetComponent<MeshRenderer>();
-        descriptionText = transform.Find("Description").GetComponent<TextMeshPro>();
+        Transform text = transform.Find("Description");
+        descriptionText = text != null ? text.GetComponent<TextMeshPro>() : null;
         Transform logo = transform.Find("Logo");
         logoText = logo != null ? logo.GetComponent<TextMeshPro>() : null;
         if (cardRenderer != null && face != null)
         {
             Material[] materials = cardRenderer.sharedMaterials;
-            if (materials != null && materials.Length > 0)
-            {
-                for (int i = 0; i < materials.Length; i++) materials[i] = face;
-                cardRenderer.sharedMaterials = materials;
-            }
+            for (int i = 0; i < materials.Length; i++) materials[i] = face;
+            cardRenderer.sharedMaterials = materials;
         }
-        if (logoText != null) logoText.text = symbol;
+        if (logoText != null)
+        {
+            logoText.text = symbol;
+            logoText.gameObject.SetActive(face == null || face.mainTexture == null);
+        }
         if (descriptionText != null)
         {
+            descriptionText.gameObject.SetActive(true);
+            descriptionText.enabled = true;
             descriptionText.text = description;
             SetDescriptionAlpha(0f);
         }
-        transform.position = home;
-        transform.rotation = rotation;
-        bool canPickUp = !placed && localOwner;
-        if (pickup != null) pickup.pickupable = canPickUp;
-        if (body != null)
-        {
-
-            body.useGravity = false;
-            body.isKinematic = true;
-        }
+        transform.SetPositionAndRotation(homePosition, homeRotation);
+        if (pickup != null) pickup.pickupable = ownedLocally;
+        if (body != null) { body.useGravity = false; body.isKinematic = true; }
     }
-
     public void OnPickup()
     {
-        if (onTable || visuals == null || !ownedLocally) return;
+        if (!ownedLocally || pendingUse || awaitingUse) return;
         held = true;
         moving = false;
-        moveVersion++;
-        textFadeVersion++;
-        Scheduler.Run(() => FadeDescription(textFadeVersion, 1f));
+        BeginFade(1f);
     }
-
     public void OnDrop()
     {
         held = false;
-        textFadeVersion++;
-        Scheduler.Run(() => FadeDescription(textFadeVersion, 0f));
-        if (visuals != null) visuals.CardDropped(this);
+        BeginFade(0f);
+        if (onTable || visuals == null) { ReturnHome(); return; }
+        visuals.incomingDroppedCard = this;
+        visuals.CardDropped();
     }
-
     public void ReturnHome()
     {
         if (pendingUse) return;
-        MoveTo(homePosition, homeRotation, false);
+        incomingDestination = homePosition;
+        incomingRotation = homeRotation;
+        incomingConsumed = false;
+        ApplyMove();
     }
-
-    public void MoveTo(Vector3 destination, Quaternion rotation, bool consumed)
+    public void ApplyMove()
     {
+        moveStart = transform.position;
+        moveStartRotation = transform.rotation;
+        moveDestination = incomingDestination;
+        moveDestinationRotation = incomingRotation;
+        pendingUse = incomingConsumed;
+        moveElapsed = 0f;
         moving = true;
-        pendingUse = consumed;
-        moveVersion++;
+        if (!incomingConsumed) { homePosition = moveDestination; homeRotation = moveDestinationRotation; }
         if (pickup != null) pickup.pickupable = false;
-        if (body != null)
-        {
-
-            body.isKinematic = true;
-        }
+        if (body != null) body.isKinematic = true;
         if (cardCollider != null) cardCollider.enabled = false;
-        Scheduler.Run(() => AnimateMove(moveVersion, destination, rotation, consumed));
     }
-
-    private async Task AnimateMove(int version, Vector3 destination, Quaternion rotation, bool consumed)
+    public void Update()
     {
-        Vector3 start = transform.position;
-        Quaternion startRotation = transform.rotation;
-        float elapsed = 0f;
-        const float duration = 0.4f;
-        while (elapsed < duration && version == moveVersion)
+        if (fading)
         {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-            t = t * t * (3f - 2f * t);
-            transform.position = Vector3.Lerp(start, destination, t);
-            transform.rotation = Quaternion.Slerp(startRotation, rotation, t);
-            await Scheduler.NextFrame();
+            fadeElapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(fadeElapsed / Mathf.Max(0.01f, descriptionFadeDuration));
+            SetDescriptionAlpha(Mathf.Lerp(fadeStart, fadeTarget, t));
+            if (t >= 1f) fading = false;
         }
-        if (version != moveVersion) return;
-        transform.position = destination;
-        transform.rotation = rotation;
-        moving = false;
-        if (consumed)
+        if (held || awaitingUse) return;
+        if (!moving)
         {
-            Destroy(gameObject);
+            // Pickups can receive a final physics/simulator pose after release.
+            // Keep an idle card at its assigned spawn or used-table position.
+            if (cardTransform != null)
+            {
+                cardTransform.position = homePosition;
+                cardTransform.rotation = homeRotation;
+            }
             return;
         }
-        if (cardCollider != null) cardCollider.enabled = true;
-        if (pickup != null) pickup.pickupable = !onTable && ownedLocally;
-        if (body != null)
+        moveElapsed += Time.deltaTime;
+        float progress = Mathf.Clamp01(moveElapsed / Mathf.Max(0.01f, moveDuration));
+        float eased = progress * progress * (3f - 2f * progress);
+        transform.SetPositionAndRotation(Vector3.Lerp(moveStart, moveDestination, eased),
+            Quaternion.Slerp(moveStartRotation, moveDestinationRotation, eased));
+        if (progress < 1f) return;
+        moving = false;
+        if (pendingUse)
         {
-            body.isKinematic = true;
-            body.useGravity = false;
+            pendingUse = false;
+            onTable = true;
+            homePosition = moveDestination;
+            homeRotation = moveDestinationRotation;
         }
+        if (cardCollider != null) cardCollider.enabled = true;
+        if (pickup != null) pickup.pickupable = ownedLocally;
+        if (body != null) { body.isKinematic = true; body.useGravity = false; }
     }
-
-    private async Task FadeDescription(int version, float target)
+    private void BeginFade(float target)
     {
         if (descriptionText == null) return;
-        float initial = descriptionText.color.a;
-        float elapsed = 0f;
-        const float duration = 0.25f;
-        while (elapsed < duration && version == textFadeVersion)
-        {
-            elapsed += Time.deltaTime;
-            SetDescriptionAlpha(Mathf.Lerp(initial, target, Mathf.Clamp01(elapsed / duration)));
-            await Scheduler.NextFrame();
-        }
-        if (version == textFadeVersion) SetDescriptionAlpha(target);
+        fadeStart = descriptionText.color.a;
+        fadeTarget = target;
+        fadeElapsed = 0f;
+        fading = true;
     }
-
     private void SetDescriptionAlpha(float alpha)
     {
         if (descriptionText == null) return;
