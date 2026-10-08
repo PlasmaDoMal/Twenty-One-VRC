@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6e142a927bfa1c04a92e3fc2df40bba4, type: 3}
+  m_Script: {fileID: 11500000, guid: ce63ab748b2c59a4683997d21d01337d, type: 3}
   m_Name: MatchHUD
   m_EditorClassIdentifier: 
   serializedUdonProgramAsset: {fileID: 11400000, guid: f13ce830f91b9e9468e3b8b3ec3393d3, type: 2}
