@@ -15,3 +15,6 @@ Interrupção solicitada pelo usuário por limite de uso. Ficaram sem conclusão
 - [ ] Fluxo intro -> basement -> TwentyOne -> basement com fade e ativação local dos mapas.
 - [ ] Build SDK para PC e performance no cliente real.
 - [ ] Conferir a correção local de SyncMetadataTable do SDK em outra máquina: o pacote é ignorado pelo Git e a alteração não acompanha este commit.
+
+## Correção do respawn após teste VRChat
+O VRCSceneDescriptor estava com RespawnHeightY = 0, no nível do piso do basement. Alterado para -10 na cena VRCDefaultWorldScene, permitindo que o jogador assente no piso sem disparar o respawn por altura. Requer novo Build & Test no VRChat para confirmar o sintoma relatado.
