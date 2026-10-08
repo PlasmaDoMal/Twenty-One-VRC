@@ -42,3 +42,12 @@ Essas alterações reduzem trabalho observado; FPS e pointer em headset exigem B
 Teste ClientSim de menus: com slot0 local, Player1_Choices alpha=1/raycasts=true e Player2_Choices alpha=0/raycasts=false. Invertendo ownership, os valores se inverteram. Hit mudou logCount de 6 para 7 e turnIndex de 0 para 1. Durante a bateria reapareceu erro ownerPlayer em TarotVisuals; chamadas IsLocalOwner foram separadas das atribuições de campos de pickups para evitar resolução incorreta do receiver pelo MenSharp.
 
 Regressão final após correção de TarotVisuals: partida solo iniciou com 6 cartas e 4 tarots; quatro Canvas Hit/Stay com VRCUiShape. Pickup/drop de Perfect Draw (20) foi confirmado, usedTrumpCount=1, pendingCard=null, visual TarotTable_0_0_20 criado. Console zerado antes da bateria e permaneceu sem erros. Essa regressão cobre o erro recorrente encontrado nesta revisão; não comprova FPS no headset ou rede entre clientes reais.
+
+## Correção dos lados e transição (08/10)
+Play1 foi alinhado ao lado físico de Cards-Player1/Player1_Choices, olhando para a mesa; Play2 ao lado de Cards-Player2/Player2_Choices. Cena e TwentyOne.prefab salvos. A face numérica usa uma cópia CardFaceReadable do mesh com U invertido, corrigindo o espelhamento sem alterar texturas nem materiais locked. Card.prefab salvo. MatchStatus foi separado verticalmente do ScoreText.
+WorldMatchSession limpa a mesa no início da transição e só solicita StartMatch depois de transitionState == 0, teleporte concluído e startAt atingido. A abertura de seis cartas documentada é mantida.
+ClientSim: durante fade prolongado de 7 segundos, transitionState=3 e teleported=true, matchStarted=false e logCount=0. Após concluir: round=1, life=[3,3], abertura=6. Clique real HitArea do Player1: cartas=7, turno=1, round=1, life=[3,3]. Screenshot Captures/solo-seat-corrected.png verifica controles no lado local, direção horizontal das faces corrigida e HUD separado do placar. Teste encerrado em Edit Mode; interação e rede entre clientes VRChat continuam pendentes.
+
+
+Espaçamento ajustado: cardGap=1.55 (antes 1.0), conferido no Udon nativo da cena e do TwentyOne.prefab. As duas instâncias Card-Placeholder em Cards-Player1/2 foram desativadas e os overrides salvos no prefab; as âncoras Card-PosPlaceholder continuam ativas. O Card.prefab usado pelo dealer permanece ativo para que as cartas distribuídas sejam visíveis.
+

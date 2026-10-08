@@ -180,10 +180,9 @@ public class WorldMatchSession : UdonSharpBehaviour
             BeginTransition(false);
         }
         if (transitionState != 0) TickTransition();
-        if (launching && localSeat == 0 && teleported && requestedEpoch != launchEpoch && Networking.GetServerTimeInSeconds() >= startAt && Networking.IsOwner(dealer.gameObject) && Networking.IsOwner(playerSlots[0]))
+        if (launching && localSeat == 0 && teleported && transitionState == 0 && requestedEpoch != launchEpoch && Networking.GetServerTimeInSeconds() >= startAt && Networking.IsOwner(dealer.gameObject) && Networking.IsOwner(playerSlots[0]))
         {
             requestedEpoch = launchEpoch;
-            dealer.SendCustomEvent("PrepareLobbySession");
             dealer.SendCustomEvent("RequestStartMatch");
         }
         if (launching && localSeat == 0 && requestedEpoch == launchEpoch && (bool)dealer.GetProgramVariable("matchOver")) _RequestLeave();
@@ -191,6 +190,9 @@ public class WorldMatchSession : UdonSharpBehaviour
     private void BeginTransition(bool toLobby)
     {
         if (fadeRenderer == null || fadeMaterial == null) return;
+        // Clear the previous table under the fade, before revealing the destination.
+        if (!toLobby && localSeat == 0 && requestedEpoch != launchEpoch && Networking.IsOwner(dealer.gameObject))
+            dealer.SendCustomEvent("PrepareLobbySession");
         returning = toLobby;
         elapsed = 0f;
         transitionState = 1;
