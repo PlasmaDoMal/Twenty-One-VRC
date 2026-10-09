@@ -99,7 +99,9 @@ public class CRTScreenTimer : MenSharpBehaviour
             return;
         }
 
-        bool result = dealer.roundResolving || dealer.matchOver;
+        // Keep the last result during the zero-timer gap before the next turn.
+        bool result = dealer.roundResolving || dealer.matchOver
+            || (dealer.matchStarted && dealer.turnSecondsLeft <= 0 && lastMessage > 0);
         int seconds = dealer.matchStarted && !result ? dealer.turnSecondsLeft : 0;
         bool ticked = seconds != lastSeconds;
         if (ticked)
@@ -173,15 +175,12 @@ public class CRTScreenTimer : MenSharpBehaviour
             {
                 continue;
             }
-            if (ticked)
-            {
-                material.SetFloat("_Seconds", (float)seconds);
-                material.SetFloat("_ColonBlink", 1f);
-            }
-            if (messageChanged)
-            {
-                material.SetFloat("_Message", (float)message);
-            }
+            // Reapply to every renderer: a replaced or reinstanced material
+            // must receive the current result even if the state did not change.
+            material.SetFloat("_ShowText", 1f);
+            material.SetFloat("_Seconds", (float)seconds);
+            material.SetFloat("_ColonBlink", 1f);
+            material.SetFloat("_Message", (float)message);
             if (ticked || messageChanged)
             {
                 material.SetColor("_Tint", tint);

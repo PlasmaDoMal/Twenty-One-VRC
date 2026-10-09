@@ -31,6 +31,7 @@ public class WorldMatchSession : UdonSharpBehaviour
     public int transitionState;
     public int localSeat = -1;
     public bool teleported;
+    public bool spectating;
     public bool initialized;
     private int seenEpoch;
     private int requestedEpoch;
@@ -166,12 +167,12 @@ public class WorldMatchSession : UdonSharpBehaviour
     public override void OnDeserialization() { ApplyWorldState(); }
     private void ApplyWorldState()
     {
-        bool visible = launching || teleported || (transitionState != 0 && !returning);
+        bool visible = launching || teleported || spectating || (transitionState != 0 && !returning);
         if (gameRoot != null && gameRoot.activeSelf != visible) gameRoot.SetActive(visible);
         // State 3 is entered under black before the intro teleports to the basement.
         // The destination must be active before the move and throughout fade-in.
         bool lobbyReady = introController == null || (int)introController.GetProgramVariable("state") >= 3;
-        bool lobbyVisible = lobbyReady && (!teleported || (transitionState != 0 && returning));
+        bool lobbyVisible = lobbyReady && ((!teleported && !spectating) || (transitionState != 0 && returning));
         if (lobbyRoots != null) for (int i = 0; i < lobbyRoots.Length; i++)
             if (lobbyRoots[i] != null && lobbyRoots[i].activeSelf != lobbyVisible) lobbyRoots[i].SetActive(lobbyVisible);
         bool introVisible = introController != null && (int)introController.GetProgramVariable("state") < 4;
@@ -192,7 +193,9 @@ public class WorldMatchSession : UdonSharpBehaviour
         int id = Networking.LocalPlayer.playerId;
         localSeat = id == hostId ? 0 : (id == guestId ? 1 : -1);
         bool participant = localSeat >= 0;
-        if (wasParticipant && (!participant || !launching) && teleported && transitionState == 0) BeginTransition(true);
+        // A cancellation can arrive during teleport/fade. Keep checking until
+        // the player has actually returned, even after seat membership clears.
+        if ((!participant || !launching) && teleported && transitionState == 0) BeginTransition(true);
         wasParticipant = participant;
         if (launching && launchEpoch != seenEpoch && participant && IntroDone())
         {
@@ -219,6 +222,7 @@ public class WorldMatchSession : UdonSharpBehaviour
     private void BeginTransition(bool toLobby)
     {
         if (fadeRenderer == null || fadeMaterial == null) return;
+        spectating = false;
         // Clear the previous table under the fade, before revealing the destination.
         if (!toLobby && localSeat == 0 && requestedEpoch != launchEpoch && Networking.IsOwner(dealer.gameObject))
             dealer.SendCustomEvent("PrepareLobbySession");
@@ -264,9 +268,36 @@ public class WorldMatchSession : UdonSharpBehaviour
     public override void PostLateUpdate() { if (transitionState != 0 && Utilities.IsValid(Networking.LocalPlayer)) PositionFade(); }
     public override void OnPlayerRespawn(VRCPlayerApi player)
     {
-        if (player.isLocal && launching && localSeat >= 0) SendCustomEventDelayedFrames(nameof(_RespawnAtTable), 3);
+        if (!player.isLocal) return;
+        if (spectating) { spectating = false; ApplyWorldState(); }
+        if (launching && (player.playerId == hostId || player.playerId == guestId))
+            SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(EndTableOnRespawn));
     }
-    public void _RespawnAtTable() { if (launching && localSeat >= 0) BeginTransition(false); }
+    [NetworkCallable]
+    public void EndTableOnRespawn()
+    {
+        if (!Networking.IsOwner(gameObject) || !launching) return;
+        VRCPlayerApi player = Caller();
+        if (!Utilities.IsValid(player) || (player.playerId != hostId && player.playerId != guestId)) return;
+        hostId = -1;
+        guestId = -1;
+        launching = false;
+        startAt = 0d;
+        RequestSerialization();
+        ApplyWorldState();
+    }
+    public void _BeginSpectating()
+    {
+        VRCPlayerApi player = Networking.LocalPlayer;
+        if (!Utilities.IsValid(player) || player.playerId == hostId || player.playerId == guestId || transitionState != 0) return;
+        spectating = true;
+        ApplyWorldState();
+    }
+    // Keep the old event safe if an earlier delayed call is still queued.
+    public void _RespawnAtTable()
+    {
+        if (launching) SendCustomNetworkEvent(NetworkEventTarget.Owner, nameof(EndTableOnRespawn));
+    }
     private void OnDisable()
     {
         if (fadeRenderer != null) fadeRenderer.enabled = false;

@@ -12,7 +12,7 @@ Ganha a rodada quem chega mais perto de 21 sem passar. O perdedor da rodada sofr
 
 - **Baralho:** cartas numéricas de 1 a 11, apenas uma de cada. Uma carta que um jogador pegou não pode ser pega pelo outro.
 - **Turno:** cada jogador compra uma carta do baralho ou passa (stay). Duas passadas seguidas, sem nenhuma trump no meio, encerram a rodada.
-- **Estouro:** quem passa de 21 perde. Se os dois passam de 21, perde quem tiver o número maior.
+- **Estouro:** quem passa do alvo perde se o adversário não estourou. Se os dois ultrapassam o alvo, a rodada empata e ninguém leva dano, independentemente dos totais (por exemplo, 27 × 31 com alvo 21). Go For altera o alvo usado nessa comparação; efeitos explícitos de derrota como Hook continuam tendo prioridade.
 - **Trumps:** a cada rodada cada jogador recebe 2 trump cards, com chance de receber outra ao comprar uma carta do baralho.
 - **Aposta e vida:** no original, um jogador é amarrado a uma serra e o outro a uma cadeira elétrica. O perdedor da rodada avança o valor da aposta (distância da serra, ou intensidade da cadeira). A aposta sobe a cada rodada. Quando ela alcança o contador restante do perdedor, ele morre e o outro vence.
 - **Timeout:** se o jogador não comprar nem passar a tempo, recebe uma carta em forma de gancho. Ela o faz perder a rodada independentemente da soma. Só Remove e Exchange a tiram (o Exchange a remove, não a troca).

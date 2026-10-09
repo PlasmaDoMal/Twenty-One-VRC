@@ -15,4 +15,6 @@ MonoBehaviour:
   modifiedAssetPathList:
   - Assets/Bakery/examples/content/sponza/sponza.FBX
   - Assets/Lobby/basementtwentyone.fbx
-  modifiedAssetPaddingHash: d6a958ffdf77ff8d
+  - Assets/_Project/Environment/TableRoom/twentyone.fbx
+  - Assets/_Project/Art/Models/Table/Table.fbx
+  modifiedAssetPaddingHash: d6a958ffdf77ff8dc72f8b406a2b6cc2

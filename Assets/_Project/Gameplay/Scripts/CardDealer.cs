@@ -91,6 +91,8 @@ public class CardDealer : MenSharpBehaviour
 
     [Tooltip("Textos dos ScoreCubes, na mesma ordem das maos: Player1 = 0, Player2 = 1.")]
     public TMP_Text[] scoreTexts;
+    [Tooltip("Opponent-facing scores, in the same player order as scoreTexts.")]
+    public TMP_Text[] enemyScoreTexts;
 
     [Header("Round")]
     [Tooltip("Cartas da abertura no total. Com dois jogadores, 4 da 1 secreta e 1 normal para cada um.")]
@@ -535,11 +537,7 @@ public class CardDealer : MenSharpBehaviour
     /// <summary>Atualiza cada placar a partir da mao reconstruida neste cliente.</summary>
     public void RefreshScores()
     {
-        if (scoreTexts == null)
-        {
-            return;
-        }
-        for (int i = 0; i < scoreTexts.Length; i++)
+        for (int i = 0; scoreTexts != null && i < scoreTexts.Length; i++)
         {
             TMP_Text scoreText = scoreTexts[i];
             if (scoreText != null)
@@ -548,6 +546,25 @@ public class CardDealer : MenSharpBehaviour
                 scoreText.text = total + "/" + EffectiveTarget();
             }
         }
+        for (int i = 0; enemyScoreTexts != null && i < enemyScoreTexts.Length; i++)
+        {
+            if (enemyScoreTexts[i] != null) enemyScoreTexts[i].text = EnemyHandScore(i);
+        }
+    }
+
+    /// <summary>Public total excludes all still-hidden cards, including Hush.</summary>
+    public string EnemyHandScore(int playerIndex)
+    {
+        int visibleTotal = 0;
+        bool concealed = false;
+        bool reveal = !hideSpecialCards || roundResolving || matchOver;
+        for (int i = 0; i < handOf.Count; i++)
+        {
+            if (handOf[i] != playerIndex) continue;
+            if (!reveal && i < special.Count && special[i]) concealed = true;
+            else visibleTotal += cardValue[i];
+        }
+        return (concealed ? "?" : "") + visibleTotal + "/" + EffectiveTarget();
     }
 
     // ------------------------------------------------------------------ api
@@ -1712,8 +1729,8 @@ public class CardDealer : MenSharpBehaviour
         else if (hookMask == 3) winner = -1;
         else if (overA && overB)
         {
-            // os dois estouraram: perde quem tiver o numero maior
-            winner = a == b ? -1 : (a > b ? 1 : 0);
+            // Ambos ultrapassaram o alvo: empate, independentemente dos totais.
+            winner = -1;
         }
         else if (overA)
         {
@@ -2206,12 +2223,12 @@ public void RequestUseTrump(int cardIndex)
         handOf.Add(target);
         slotOf.Add(slot);
         cardValue.Add(value);
-        RefreshScores();
 
         // A marca de oculta pertence a entrada do historico, inclusive Hush e
         // Refresh; nao depende da casa atual depois de Remove ou Exchange.
         bool isSpecial = logHidden[entry] != 0;
         special.Add(isSpecial);
+        RefreshScores();
         ApplyCardMaterial(card, value, isSpecial, target);
         if (logDeals)
         {

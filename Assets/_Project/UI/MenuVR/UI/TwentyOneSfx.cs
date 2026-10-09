@@ -6,6 +6,7 @@ using VRC.Udon;
 public class TwentyOneSfx : UdonSharpBehaviour
 {
     public UdonBehaviour dealer;
+    public UdonBehaviour matchSession;
     public AudioSource choiceClick;
     public AudioSource cardHandling;
     public AudioSource crtStartup;
@@ -22,7 +23,8 @@ public class TwentyOneSfx : UdonSharpBehaviour
     [Min(1f)] public float ambientIntervalMin = 90f;
     [Min(1f)] public float ambientIntervalMax = 180f;
     private bool initialized;
-    private bool wasMatchStarted;
+    private bool wasMatchActive;
+    private int startupEpoch = -1;
     private int seenHit;
     private int lastCardClip = -1;
     private float nextPoll;
@@ -31,7 +33,8 @@ public class TwentyOneSfx : UdonSharpBehaviour
     private void OnDisable()
     {
         initialized = false;
-        wasMatchStarted = false;
+        wasMatchActive = false;
+        nextPoll = 0f;
         nextAmbient = 0f;
         if (ambientLoop != null) ambientLoop.Stop();
         if (randomAmbient != null) randomAmbient.Stop();
@@ -49,17 +52,26 @@ public class TwentyOneSfx : UdonSharpBehaviour
         int hit = (int)dealer.GetProgramVariable("hitSoundSequence");
         bool started = (bool)dealer.GetProgramVariable("matchStarted");
         bool active = started && !(bool)dealer.GetProgramVariable("matchOver");
+        // Keep the ambience through the final animation, until the local player leaves.
+        bool gameplay = matchSession != null
+            ? (bool)matchSession.GetProgramVariable("teleported") || (bool)matchSession.GetProgramVariable("spectating")
+            : active;
+        int epoch = matchSession != null ? (int)matchSession.GetProgramVariable("launchEpoch") : -1;
         if (!initialized) { initialized = true; seenHit = hit; }
-        if (active && !wasMatchStarted)
+        bool playStartup = matchSession != null ? startupEpoch != epoch : !wasMatchActive;
+        if (gameplay && active && playStartup)
         {
             if (crtStartup != null && crtStartup.clip != null) { crtStartup.pitch = startupPitch; crtStartup.Play(); }
             if (tvSwitchOn != null && tvSwitchOn.clip != null) { tvSwitchOn.pitch = startupPitch; tvSwitchOn.Play(); }
+            startupEpoch = epoch;
         }
-        wasMatchStarted = started;
+        wasMatchActive = active;
         if (ambientLoop != null && ambientLoop.clip != null)
         {
-            if (active && !ambientLoop.isPlaying) ambientLoop.Play();
-            else if (!active && ambientLoop.isPlaying) ambientLoop.Stop();
+            ambientLoop.loop = true;
+            ambientLoop.spatialBlend = 0f;
+            if (gameplay && !ambientLoop.isPlaying) ambientLoop.Play();
+            else if (!gameplay && ambientLoop.isPlaying) ambientLoop.Stop();
         }
         if (!active)
         {

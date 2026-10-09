@@ -8,13 +8,13 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: card-1
-  m_Shader: {fileID: 4800000, guid: 8287f7d0fab30d24e89cdf40f1ff2bad, type: 3}
+  m_Shader: {fileID: 4800000, guid: a5bfe14f83fc1e3439d37b47354b27f0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
   - VIGNETTE_MASKED
-  - _LIGHTINGMODE_FLAT
+  - _LIGHTINGMODE_REALISTIC
   - _RIM2STYLE_POIYOMI
   - _RIMSTYLE_POIYOMI
   - _STOCHASTICMODE_DELIOT_HEITZ
@@ -25,8 +25,8 @@ Material:
   m_CustomRenderQueue: 2000
   stringTagMap:
     AllLockedGUIDS: d5c73728e0f38b4429b8abf33ef927c2
-    OriginalKeywords: VIGNETTE_MASKED _LIGHTINGMODE_FLAT _RIM2STYLE_POIYOMI _RIMSTYLE_POIYOMI
-      _STOCHASTICMODE_DELIOT_HEITZ _STYLIZEDREFLECTIONMODE_UNITYCHAN
+    OriginalKeywords: VIGNETTE_MASKED _LIGHTINGMODE_REALISTIC _RIM2STYLE_POIYOMI
+      _RIMSTYLE_POIYOMI _STOCHASTICMODE_DELIOT_HEITZ _STYLIZEDREFLECTIONMODE_UNITYCHAN
     OriginalShader: .poiyomi/Poiyomi Pro World
     OriginalShaderGUID: b4ed1bbd171c63b43b8f92181c3abb29
     RenderType: Opaque
@@ -1257,7 +1257,7 @@ Material:
     - _ForceFlatRampedLightmap: 1
     - _ForgotToLockMaterial: 1
     - _GGXAnisotropics: 0
-    - _GIEmissionMultiplier: 1
+    - _GIEmissionMultiplier: 0.2
     - _GITDEMaxEmissionMultiplier: 0
     - _GITDEMaxEmissionMultiplier1: 0
     - _GITDEMaxEmissionMultiplier2: 0
@@ -1695,14 +1695,14 @@ Material:
     - _LightingCap: 1
     - _LightingCapEnabled: 1
     - _LightingCastedShadows: 0
-    - _LightingColorMode: 0
+    - _LightingColorMode: 2
     - _LightingDebugVisualize: 0
     - _LightingDetailShadowMapsUV: 0
     - _LightingDetailShadowStrengthA: 0
     - _LightingDetailShadowStrengthB: 0
     - _LightingDetailShadowStrengthG: 0
     - _LightingDetailShadowStrengthR: 1
-    - _LightingDirectionMode: 0
+    - _LightingDirectionMode: 3
     - _LightingEnableLightVolumes: 1
     - _LightingForceColorEnabled: 0
     - _LightingForcedColorThemeIndex: 0
@@ -1714,10 +1714,10 @@ Material:
     - _LightingLightVolumesNormalBias: 0
     - _LightingLightVolumesPointShadows: 3
     - _LightingLightVolumesSpecular: 1
-    - _LightingMapMode: 0
+    - _LightingMapMode: 1
     - _LightingMinLightBrightness: 0
     - _LightingMirrorVertexLightingEnabled: 1
-    - _LightingMode: 5
+    - _LightingMode: 6
     - _LightingMonochromatic: 0
     - _LightingMulitlayerNonLinear: 1
     - _LightingShadowMaskStrengthA: 0
@@ -2618,7 +2618,7 @@ Material:
     - _ShadowOffset: 0
     - _ShadowPostAO: 0
     - _ShadowReceive: 0
-    - _ShadowStrength: 1
+    - _ShadowStrength: 0.233
     - _ShadowStrengthMaskUV: 0
     - _SkinThicknessMapInvert: 0
     - _SkinThicknessMapUV: 0
@@ -3139,7 +3139,7 @@ Material:
     - m_end_vertexManipulation: 0
     - m_end_videoEffects: 0
     - m_end_voronoi: 0
-    - m_lightingCategory: 0
+    - m_lightingCategory: 1
     - m_mainCategory: 1
     - m_modifierCategory: 0
     - m_raymarchingCategory: 0
@@ -3214,9 +3214,9 @@ Material:
     - m_start_OutlineStencilPassFrontOptions: 0
     - m_start_PPAnimations: 0
     - m_start_PoiGlobalCategory: 0
-    - m_start_PoiLightData: 0
+    - m_start_PoiLightData: 1
     - m_start_PoiPostProcessingCategory: 0
-    - m_start_PoiShading: 0
+    - m_start_PoiShading: 1
     - m_start_PoiSkin: 0
     - m_start_PoiTimeOptions: 0
     - m_start_PoiUVCategory: 0
@@ -3241,7 +3241,7 @@ Material:
     - m_start_audioLinkOverrides: 0
     - m_start_backFace: 0
     - m_start_backlight: 0
-    - m_start_bakedLighting: 0
+    - m_start_bakedLighting: 1
     - m_start_blending: 0
     - m_start_brdf: 0
     - m_start_clearCoat: 0

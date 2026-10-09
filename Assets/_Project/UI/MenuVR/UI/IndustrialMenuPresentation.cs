@@ -140,12 +140,12 @@ public class IndustrialMenuPresentation : UdonSharpBehaviour
                 if (host >= 0)
                 {
                     VRCPlayerApi occupant = VRCPlayerApi.GetPlayerById(host);
-                    if (Utilities.IsValid(occupant)) first += "\n" + occupant.displayName;
+                    if (Utilities.IsValid(occupant)) first = (language == 1 ? "Lugar 1\nOcupado por " : "Seat 1\nOccupied by ") + occupant.displayName;
                 }
                 if (guest >= 0)
                 {
                     VRCPlayerApi occupant = VRCPlayerApi.GetPlayerById(guest);
-                    if (Utilities.IsValid(occupant)) second += "\n" + occupant.displayName;
+                    if (Utilities.IsValid(occupant)) second = (language == 1 ? "Lugar 2\nOcupado por " : "Seat 2\nOccupied by ") + occupant.displayName;
                 }
                 if (seatOne != null && seatOne.text != first) seatOne.text = first;
                 if (seatTwo != null && seatTwo.text != second) seatTwo.text = second;

@@ -31,7 +31,7 @@ ModelImporter:
     animationWrapMode: 0
     extraExposedTransformPaths: []
     extraUserProperties:
-    - '#BAKERY{"meshName":["book1_low1.001","Pipe_2","book1_low1","television_02.002","Cylinder.001","Pipe_1","metal_trash_can_rust_lid","Cube.002","television_02.003","Plane.001","metal_trash_can_rust_handle_right","obturator","television_02","metal_trash_can_rust_handle_left","Cube","Cylinder.004","television_02.004","Plane","painted_wooden_chair_02","television_02.005","metal_trash_can_rust","chinese_console_table","Cube.001","Pipe_4.001","Cube.003","painted_wooden_chair_02.001","Pipe_4"],"padding":[169,110,151,171,256,149,256,38,72,24,256,201,72,256,33,256,72,24,104,72,93,61,33,127,38,104,127],"unwrapper":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}'
+    - '#BAKERY{"meshName":["book1_low1.001","Pipe_2","book1_low1","television_02.002","Cylinder.001","Pipe_1","Cube.002","television_02.003","Plane.001","obturator","television_02","Cube","Cylinder.004","television_02.004","Plane","painted_wooden_chair_02","television_02.005","chinese_console_table","Cube.001","Pipe_4.001","Cube.003","painted_wooden_chair_02.001","Pipe_4"],"padding":[169,110,151,171,256,149,38,72,24,201,72,33,256,72,24,104,72,61,33,127,38,104,127],"unwrapper":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}'
     clipAnimations: []
     isReadable: 0
   meshes:
