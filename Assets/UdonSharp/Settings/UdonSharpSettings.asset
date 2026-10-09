@@ -18,9 +18,9 @@ MonoBehaviour:
   newScriptTemplateOverride: {fileID: 0}
   scanningDirectoryBlacklist:
   - Assets/MenSharp/
-  - Assets/Scripts/
-  - Assets/IntroMenuVRChat/Scripts/
-  - Assets/MenuVR/Scripts/
+  - Assets/_Project/Gameplay/Scripts/
+  - Assets/_Project/UI/MenuVR/Scripts/
+  - Assets/_Project/UI/IntroMenuVRChat/Scripts/
   defaultBehaviourInterfaceType: 
   buildDebugInfo: 1
   includeInlineCode: 1
