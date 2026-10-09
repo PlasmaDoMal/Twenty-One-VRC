@@ -32,6 +32,9 @@ public class CRTScreenTimer : MenSharpBehaviour
     [Tooltip("Renderers das TVs que usam o material CRTScreen (os CRT_ScreenGlow).")]
     public Renderer[] screens;
 
+    [Tooltip("CRT lights that follow the screen tint locally.")]
+    public Light[] screenLights;
+
     [Header("Cores")]
     public Color normalTint = new Color(0.72f, 0.79f, 0.80f, 1f);
     public Color normalText = new Color(0.85f, 0.95f, 0.90f, 1f);
@@ -96,7 +99,8 @@ public class CRTScreenTimer : MenSharpBehaviour
             return;
         }
 
-        int seconds = dealer.turnSecondsLeft;
+        bool result = dealer.roundResolving || dealer.matchOver;
+        int seconds = dealer.matchStarted && !result ? dealer.turnSecondsLeft : 0;
         bool ticked = seconds != lastSeconds;
         if (ticked)
         {
@@ -117,12 +121,16 @@ public class CRTScreenTimer : MenSharpBehaviour
         // (nem um nem outro) fica so com o X do shader.
         bool counting = seconds > 0;
         int message = MessageNone;
-        if (!counting)
+        if (result)
         {
             int winner = dealer.lastRoundWinner;
-            if (winner >= 0 && winner <= 1)
+            if (winner < 0) message = 3; // DRAW
+            else if (winner <= 1)
             {
-                if (dealer.IsLocalPlayer(winner))
+                bool first = dealer.IsLocalPlayer(0);
+                bool second = dealer.IsLocalPlayer(1);
+                if ((first && second) || (!first && !second)) message = 4 + winner;
+                else if (dealer.IsLocalPlayer(winner))
                 {
                     message = MessageWon;
                 }
@@ -146,6 +154,12 @@ public class CRTScreenTimer : MenSharpBehaviour
         bool alert = counting && seconds <= alertSeconds;
         Color tint = alert ? alertTint : normalTint;
         Color text = alert || message == MessageLost ? alertText : normalText;
+
+        if ((ticked || messageChanged) && screenLights != null)
+        {
+            for (int i = 0; i < screenLights.Length; i++)
+                if (screenLights[i] != null) screenLights[i].color = tint;
+        }
 
         for (int i = 0; i < screens.Length; i++)
         {

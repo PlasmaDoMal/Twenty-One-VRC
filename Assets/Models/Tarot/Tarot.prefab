@@ -430,9 +430,6 @@ PrefabInstance:
       addedObject: {fileID: 719658874306606298}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 590231668809899240}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 2058405698683815792}
   m_SourcePrefab: {fileID: 100100000, guid: eefe71f4fbfabea4aacd49b87f90b1e8, type: 3}
 --- !u!1 &8550299595290114685 stripped
@@ -545,6 +542,7 @@ MonoBehaviour:
   held: 0
   pendingUse: 0
   moving: 0
+  awaitingUse: 0
   homePosition: {x: 0, y: 0, z: 0}
   homeRotation: {x: 0, y: 0, z: 0, w: 0}
   descriptionText: {fileID: 0}
@@ -570,31 +568,7 @@ MonoBehaviour:
   fading: 0
   moveDuration: 0.4
   descriptionFadeDuration: 0.25
---- !u!114 &590231668809899240
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8550299595290114685}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45115577ef41a5b4ca741ed302693907, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interactTextPlacement: {fileID: 0}
-  interactText: Use
-  interactTextGO: {fileID: 0}
-  proximity: 2
-  SynchronizePosition: 0
-  AllowCollisionOwnershipTransfer: 1
-  Reliable: 0
-  _syncMethod: 2
-  serializedProgramAsset: {fileID: 11400000, guid: 98e44e4cc6c9f98459b2575cb3691fb1, type: 2}
-  programSource: {fileID: 0}
-  serializedPublicVariablesBytesString: Ai8AAAAAATIAAABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlAFQAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AAAAAAAYBAAAAAAAAACcBBAAAAHQAeQBwAGUAAWgAAABTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEcAZQBuAGUAcgBpAGMALgBMAGkAcwB0AGAAMQBbAFsAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4ALgBJAG4AdABlAHIAZgBhAGMAZQBzAC4ASQBVAGQAbwBuAFYAYQByAGkAYQBiAGwAZQAsACAAVgBSAEMALgBVAGQAbwBuAC4AQwBvAG0AbQBvAG4AXQBdACwAIABtAHMAYwBvAHIAbABpAGIAAQEJAAAAVgBhAHIAaQBhAGIAbABlAHMALwEAAAABaAAAAFMAeQBzAHQAZQBtAC4AQwBvAGwAbABlAGMAdABpAG8AbgBzAC4ARwBlAG4AZQByAGkAYwAuAEwAaQBzAHQAYAAxAFsAWwBWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgAuAEkAbgB0AGUAcgBmAGEAYwBlAHMALgBJAFUAZABvAG4AVgBhAHIAaQBhAGIAbABlACwAIABWAFIAQwAuAFUAZABvAG4ALgBDAG8AbQBtAG8AbgBdAF0ALAAgAG0AcwBjAG8AcgBsAGkAYgABAAAABgAAAAAAAAAABwUHBQ==
-  publicVariablesUnityEngineObjects: []
-  publicVariablesSerializationDataFormat: 0
+  nextIdlePoseCheck: 0
 --- !u!114 &2058405698683815792
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -56,7 +56,7 @@ public class CardDealer : MenSharpBehaviour
         logStructureRevision++;
         trumpCount = 0; tableTrumpCount = 0; usedTrumpCount = 0;
         matchStarted = false; matchOver = false; roundResolving = false;
-        turnSecondsLeft = 0; turnDeadline = 0f;
+        turnSecondsLeft = 0; turnDeadline = 0f; turnReadyAt = 0d;
         RequestSerialization();
         NotifyTurnChanged();
     }
@@ -93,8 +93,8 @@ public class CardDealer : MenSharpBehaviour
     public TMP_Text[] scoreTexts;
 
     [Header("Round")]
-    [Tooltip("Cartas da abertura no total. Com dois jogadores, 6 da 1 secreta e 2 normais para cada um.")]
-    public int openingCards = 6;
+    [Tooltip("Cartas da abertura no total. Com dois jogadores, 4 da 1 secreta e 1 normal para cada um.")]
+    public int openingCards = 4;
 
     [Header("Special card")]
     [Tooltip("Marca como especial a primeira carta que cada jogador recebe na abertura. Como o baralho esta embaralhado, o numero delas tambem e sorteado.")]
@@ -104,7 +104,7 @@ public class CardDealer : MenSharpBehaviour
     public Material hiddenMaterial;
 
     [Tooltip("Esconde a face da primeira carta numerica de cada jogador. A carta oculta nao e uma trump.")]
-    public bool hideSpecialCards = false;
+    public bool hideSpecialCards = true;
 
     [Header("Deck")]
     [Tooltip("Menor numero do baralho. No Twenty One comeca em 1.")]
@@ -184,7 +184,7 @@ public class CardDealer : MenSharpBehaviour
     public int roundDamageGrowth = 1;
 
     [Tooltip("Vida inicial de cada jogador. A partida acaba quando a vida de alguem chega a zero.")]
-    public int startingLife = 3;
+    public int startingLife = 20;
 
     [Tooltip("Numero maximo de rodadas. 0 = sem limite, e a partida so acaba quando a vida de alguem zera.")]
     public int maxRounds = 0;
@@ -192,7 +192,7 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Duas passadas seguidas encerram a rodada. E a regra do original.")]
     public bool twoStaysEndRound = true;
 
-    [Tooltip("Segundos para agir antes de receber o gancho por tempo. 0 desliga o timeout. A TV CRT mostra esta contagem.")]
+    [Tooltip("Segundos para agir antes de perder a rodada por tempo. 0 desliga o timeout. A TV CRT mostra esta contagem.")]
     public float turnTimeoutSeconds = 60f;
 
     [Tooltip("Cartas de tarot que cada jogador recebe por rodada.")]
@@ -299,7 +299,9 @@ public class CardDealer : MenSharpBehaviour
     [UdonSynced] public double roundEndAt;
     [UdonSynced] public int lastTimeoutPlayer = -1;
     [UdonSynced] public int resolvedBet;
-    public float resultDisplaySeconds = 3f;
+    public float resultDisplaySeconds = 5f;
+    public float turnTransitionSeconds = 2f;
+    [UdonSynced] public double turnReadyAt;
 
     // Ultima jogada processada de cada Slot. E o que impede a mesma intencao de
     // ser executada duas vezes, sem precisar limpar nada no Slot.
@@ -328,6 +330,7 @@ public class CardDealer : MenSharpBehaviour
         {
             return false;
         }
+        if (Networking.GetServerTimeInSeconds() < turnReadyAt) return false;
         if (!openingDealt)
         {
             return false;
@@ -488,7 +491,12 @@ public class CardDealer : MenSharpBehaviour
     public float nextSlotPoll;
     public void Update()
     {
-        if (Time.time >= nextSlotPoll) { nextSlotPoll = Time.time + 0.05f; ProcessSlots(); }
+        if (Time.time >= nextSlotPoll)
+        {
+            nextSlotPoll = Time.time + 0.05f;
+            ProcessSlots();
+            NotifyTurnChanged();
+        }
         if (Time.time < nextCardVisibilityRefresh) return;
         nextCardVisibilityRefresh = Time.time + 0.2f;
         RefreshCardVisibility();
@@ -701,6 +709,7 @@ public class CardDealer : MenSharpBehaviour
         // FinishRound chama este metodo no fim de cada rodada, entao o numero
         // que aparece no log e sempre o da rodada que esta começando
         roundResolving = false;
+        turnReadyAt = 0d;
         roundNumber++;
         turnIndex = 0;
         currentPlayer = 0;
@@ -871,7 +880,7 @@ public class CardDealer : MenSharpBehaviour
             return false;
         }
         int deckSize = Mathf.Abs(deckMaxValue - deckMinValue) + 1;
-        if (openingCards < HandCount() * 3 || openingCards > deckSize
+        if (openingCards < HandCount() * 2 || openingCards > deckSize
             || logCapacity < deckSize || maxTrumpsPerPlayer < trumpCardsPerRound
             || maxTrumpsPerPlayer < 1 || trumpCardsPerRound < 0
             || tableTrumpCapacity < 1)
@@ -1299,7 +1308,7 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void AcceptHit(int player)
     {
-        if (!matchStarted || matchOver || !IsReady())
+        if (!matchStarted || matchOver || !IsReady() || HandTotal(player) > EffectiveTarget())
         {
             return;
         }
@@ -1318,11 +1327,7 @@ public class CardDealer : MenSharpBehaviour
         {
             StartDraining();
         }
-        if (logTurns && HandTotal(player) > EffectiveTarget())
-        {
-            Debug.Log("CardDealer: jogador " + player + " estourou com "
-                + HandTotal(player) + ". A rodada segue ate duas passadas para comparar os dois totais.");
-        }
+        // Busts stay hidden until round resolution; only further Hit is blocked.
         AdvanceTurn(player);
     }
 
@@ -1651,6 +1656,8 @@ public class CardDealer : MenSharpBehaviour
         }
         currentPlayer = turnIndex;
         actionEpoch++; // Invalidate requests from the previous turn.
+        turnReadyAt = Networking.GetServerTimeInSeconds() + Mathf.Max(0f, turnTransitionSeconds);
+        turnSecondsLeft = 0;
         ResetTurnDeadline();
         RequestSerialization();
         NotifyTurnChanged();
@@ -1659,6 +1666,7 @@ public class CardDealer : MenSharpBehaviour
     private void ResetTurnDeadline()
     {
         turnDeadline = turnTimeoutSeconds > 0f && !dealing && pendingFly.Count == 0
+            && Networking.GetServerTimeInSeconds() >= turnReadyAt
             ? Time.time + turnTimeoutSeconds : 0f;
     }
 
@@ -1673,7 +1681,7 @@ public class CardDealer : MenSharpBehaviour
         int target = 0;
         if (matchStarted && !matchOver && turnTimeoutSeconds > 0f
             && openingDealt && !dealing && pendingFly.Count == 0
-            && turnDeadline > 0f)
+            && turnDeadline > 0f && Networking.GetServerTimeInSeconds() >= turnReadyAt)
         {
             float remain = turnDeadline - Time.time;
             target = remain > 0f ? Mathf.CeilToInt(remain) : 0;
@@ -1730,6 +1738,7 @@ public class CardDealer : MenSharpBehaviour
     /// </summary>
     private void FinishRound(int winner)
     {
+        if (roundResolving || matchOver) return;
         actionEpoch++;
         roundWinner = winner;
         lastRoundWinner = winner;
@@ -1769,8 +1778,9 @@ public class CardDealer : MenSharpBehaviour
         baseBet = blessSaved ? Mathf.Max(0, baseBet - 1)
             : Mathf.Max(0, baseBet + roundDamageGrowth);
 
+        turnDeadline = 0f;
         roundResolving = true;
-        roundEndAt = Networking.GetServerTimeInSeconds() + Mathf.Max(1f, resultDisplaySeconds);
+        roundEndAt = Networking.GetServerTimeInSeconds() + Mathf.Max(3f, resultDisplaySeconds);
         RevealRoundCards();
         turnSecondsLeft = 0;
         RequestSerialization();
@@ -1940,7 +1950,8 @@ public void RequestUseTrump(int cardIndex)
         }
         SyncTurnSecondsLeft();
         if (matchStarted && !matchOver && turnTimeoutSeconds > 0f
-            && openingDealt && !dealing && pendingFly.Count == 0)
+            && openingDealt && !dealing && pendingFly.Count == 0
+            && Networking.GetServerTimeInSeconds() >= turnReadyAt)
         {
             if (turnDeadline <= 0f)
             {
@@ -1950,10 +1961,10 @@ public void RequestUseTrump(int cardIndex)
             {
                 if (logTurns)
                 {
-                    Debug.Log("CardDealer: jogador " + turnIndex + " passou a vez por tempo.");
+                    Debug.Log("CardDealer: jogador " + turnIndex + " perdeu a rodada por tempo.");
                 }
-                consecutiveStays = 0;
-                AdvanceTurn(turnIndex);
+                lastTimeoutPlayer = turnIndex;
+                FinishRound(1 - turnIndex);
                 return;
             }
         }
@@ -2001,7 +2012,7 @@ public void RequestUseTrump(int cardIndex)
                 }
                 continue;
             }
-            if (!matchStarted || matchOver || roundResolving || dealing || pendingFly.Count > 0)
+            if (!TurnIsActionable())
             {
                 continue;
             }
@@ -2017,6 +2028,7 @@ public void RequestUseTrump(int cardIndex)
             int arg = slot.ActionArg;
             if (type == PlayerSlot.ActionHit)
             {
+                if (HandTotal(i) > EffectiveTarget()) continue;
                 AcceptHit(i);
             }
             else if (type == PlayerSlot.ActionStay)

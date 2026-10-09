@@ -37,6 +37,7 @@ public class WorldMatchSession : UdonSharpBehaviour
     private bool returning;
     private Material fadeMaterial;
     private bool wasParticipant;
+    private float nextSeatCleanup;
 
     private void Start()
     {
@@ -138,6 +139,18 @@ public class WorldMatchSession : UdonSharpBehaviour
         else return;
         RequestSerialization();
     }
+    private void ClearDepartedSeats()
+    {
+        if (!Networking.IsOwner(gameObject)) return;
+        bool staleHost = hostId >= 0 && !Utilities.IsValid(VRCPlayerApi.GetPlayerById(hostId));
+        bool staleGuest = guestId >= 0 && !Utilities.IsValid(VRCPlayerApi.GetPlayerById(guestId));
+        if (!staleHost && !staleGuest) return;
+        if (staleHost) { hostId = -1; guestId = -1; }
+        else guestId = -1;
+        launching = false;
+        RequestSerialization();
+        ApplyWorldState();
+    }
     public override void OnOwnershipTransferred(VRCPlayerApi player)
     {
         if (!Networking.IsOwner(gameObject)) return;
@@ -166,6 +179,11 @@ public class WorldMatchSession : UdonSharpBehaviour
     private void Update()
     {
         if (!initialized || !Utilities.IsValid(Networking.LocalPlayer)) return;
+        if (Time.time >= nextSeatCleanup)
+        {
+            nextSeatCleanup = Time.time + 0.5f;
+            ClearDepartedSeats();
+        }
         if (!launching && Networking.IsOwner(dealer.gameObject)
             && (bool)dealer.GetProgramVariable("matchStarted")) dealer.SendCustomEvent("AbortMatch");
         ApplyWorldState();

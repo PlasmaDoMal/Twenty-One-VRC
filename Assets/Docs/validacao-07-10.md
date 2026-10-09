@@ -1,3 +1,5 @@
+> Histórico de 07/10. Em 09/10 o usuário confirmou funcionamento de rede com dois clientes reais, VR e performance no PC. Bake ainda não realizado. Estado atual: pendencias.md e validacao-08-10.md.
+
 # Validação — 07/10/2026
 
 ## Materiais

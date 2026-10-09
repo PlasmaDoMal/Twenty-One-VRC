@@ -71,6 +71,11 @@ public class TarotVisuals : MenSharpBehaviour
 
     public void Start()
     {
+        // VRChat resolves serialized null Udon references to this behaviour.
+        // These references are runtime state, so initialize them explicitly.
+        pendingCard = null;
+        incomingDroppedCard = null;
+        lastDroppedCard = null;
         if (dealer == null || tarotPrefab == null || spawnAreas == null
             || spawnAreas.Length < 2 || tableRows == null || tableRows.Length < 2)
         {
@@ -84,7 +89,7 @@ public class TarotVisuals : MenSharpBehaviour
 
     public void Update()
     {
-            if (handVisuals == null || Time.time < nextPoll) return;
+            if (handVisuals == null || handVisuals.Length == 0 || Time.time < nextPoll) return;
             nextPoll = Time.time + 0.15f;
             ResolvePendingUse();
             for (int i = 0; i < handVisuals.Length; i++)
@@ -309,18 +314,21 @@ public class TarotVisuals : MenSharpBehaviour
     private Vector3 HandPosition(int player, int index)
     {
         BoxCollider spawn = spawnAreas[player];
-        Bounds bounds = spawn.bounds;
-        Collider platform = spawn.transform.parent != null
-            ? spawn.transform.parent.GetComponent<Collider>() : null;
-        float surfaceY = platform != null ? platform.bounds.max.y : bounds.center.y;
+        // Disabled colliders report empty bounds at the pivot, inside the stand.
+        // Use the configured box geometry even when physics is disabled.
+        Vector3 center = spawn.transform.TransformPoint(spawn.center);
+        Vector3 halfX = spawn.transform.TransformVector(Vector3.right * spawn.size.x * 0.5f);
+        Vector3 halfY = spawn.transform.TransformVector(Vector3.up * spawn.size.y * 0.5f);
+        Vector3 halfZ = spawn.transform.TransformVector(Vector3.forward * spawn.size.z * 0.5f);
+        float surfaceY = center.y + Mathf.Abs(halfX.y) + Mathf.Abs(halfY.y) + Mathf.Abs(halfZ.y);
         BoxCollider prefabCollider = tarotPrefab.GetComponent<BoxCollider>();
         float halfCardHeight = prefabCollider != null
             ? prefabCollider.size.y * tarotPrefab.transform.localScale.y * 0.5f : 0.005f;
         int column = index % 4;
         int row = index / 4;
-        return new Vector3(bounds.center.x + (column - 1.5f) * handSpacing,
+        return new Vector3(center.x + (column - 1.5f) * handSpacing,
             surfaceY + halfCardHeight + 0.001f,
-            bounds.center.z + (row - 0.5f) * 0.11f);
+            center.z + (row - 0.5f) * 0.11f);
     }
 
     private Quaternion HandRotation(int player)
@@ -367,26 +375,26 @@ public class TarotVisuals : MenSharpBehaviour
     {
         string name = TrumpSymbol(type);
         string effect = "";
-        if (type >= 1 && type <= 6) effect = "Compra o numero " + (type + 1) + " se estiver no baralho.";
-        else if (type == 7) effect = "Muda o alvo para 17.";
-        else if (type == 8) effect = "Muda o alvo para 24.";
-        else if (type == 9) effect = "Muda o alvo para 27.";
-        else if (type == 10) effect = "Aumenta a aposta em 1.";
-        else if (type == 11) effect = "Aumenta a aposta em 2.";
-        else if (type == 12) effect = "Reduz a aposta em 1.";
-        else if (type == 13) effect = "Reduz a aposta em 2.";
-        else if (type == 14) effect = "Evita uma derrota fatal.";
-        else if (type == 15) effect = "Aposta +1 e compra uma tarot.";
-        else if (type == 16) effect = "Destroi a ultima tarot do oponente.";
-        else if (type == 17) effect = "Destroi uma tarot e compra outra.";
-        else if (type == 18) effect = "Ambos compram duas tarots.";
-        else if (type == 19) effect = "Compra uma carta numerica oculta.";
-        else if (type == 20) effect = "Compra o numero que completa o alvo.";
-        else if (type == 21) effect = "Remove a ultima carta do oponente.";
-        else if (type == 22) effect = "Devolve sua ultima carta numerica.";
-        else if (type == 23) effect = "Troca as ultimas cartas das maos.";
-        else if (type == 24) effect = "O oponente compra uma carta.";
-        else if (type == 25) effect = "Troca sua mao por duas cartas novas.";
+        if (type >= 1 && type <= 6) effect = "Draw " + (type + 1) + " if it is still in the deck.";
+        else if (type == 7) effect = "Set the target to 17.";
+        else if (type == 8) effect = "Set the target to 24.";
+        else if (type == 9) effect = "Set the target to 27.";
+        else if (type == 10) effect = "Increase the stake by 1.";
+        else if (type == 11) effect = "Increase the stake by 2.";
+        else if (type == 12) effect = "Reduce the stake by 1.";
+        else if (type == 13) effect = "Reduce the stake by 2.";
+        else if (type == 14) effect = "Survive lethal round damage with 1 life.";
+        else if (type == 15) effect = "Stake +1. Draw a trump card.";
+        else if (type == 16) effect = "Destroy your opponent's latest active trump.";
+        else if (type == 17) effect = "Destroy your opponent's latest active trump. If destroyed, draw a trump.";
+        else if (type == 18) effect = "Both players draw 2 trump cards.";
+        else if (type == 19) effect = "Draw a hidden number card.";
+        else if (type == 20) effect = "Draw the number needed to reach the target, if available.";
+        else if (type == 21) effect = "Remove your opponent's last number card. Keep their last hidden card.";
+        else if (type == 22) effect = "Return your last number card. Keep your last hidden card.";
+        else if (type == 23) effect = "Swap both players' last number cards. Keep each last hidden card.";
+        else if (type == 24) effect = "Your opponent draws a number card. No bonus trump.";
+        else if (type == 25) effect = "Replace your number cards with 2 new cards, the first hidden.";
         return name + "\n" + effect;
     }
 }

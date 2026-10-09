@@ -86,8 +86,6 @@ public class IndustrialMenuPresentation : UdonSharpBehaviour
                 Color taken = new Color(0.6f, 0.6f, 0.6f, 1f);
                 if (seatOne != null) seatOne.color = host >= 0 ? taken : open;
                 if (seatTwo != null) seatTwo.color = guest >= 0 || host < 0 ? taken : open;
-                bool canReady = host >= 0 && guest >= 0 && !(bool)session.GetProgramVariable("launching");
-                if (readyButton != null && readyButton.activeSelf != canReady) readyButton.SetActive(canReady);
                 if (router != null && Utilities.IsValid(Networking.LocalPlayer)
                     && (bool)router.GetProgramVariable("ready"))
                 {

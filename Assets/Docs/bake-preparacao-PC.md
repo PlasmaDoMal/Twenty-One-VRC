@@ -4,7 +4,7 @@ Cena: Assets/Scenes/VRCDefaultWorldScene.unity. Nenhum bake foi iniciado.
 
 - Auto Generate desligado (On Demand). Configuração salva em Assets/Lighting/PC_BakeSettings.lighting.
 - Progressive CPU; Baked GI ligado, Realtime GI desligado; 20 texels/unidade; atlas 2048; padding 4; amostras direct/indirect/environment 64/256/128; três bounces; AO indireto com distância 0,35 m.
-- Luzes fixas do basement e TwentyOne em Baked. TestLight permanece desligada.
+- Luzes fixas do basement e TwentyOne em Baked, exceto as sete luzes com CRT no nome: Mixed, vinculadas à cor normal/alerta do CRTScreenTimer. TestLight permanece desligada.
 - Geometria fixa contribui para GI e recebe Lightmaps. Cartas, tarots, rigidbodies, Canvas, textos de gameplay e glows dinâmicos ficam fora da contribuição. Nenhum objeto foi reposicionado.
 - Generate Lightmap UVs habilitado nos três FBX de cenário/mesa; três malhas locais receberam cópias com UV2 em Assets/Lighting/BakeMeshes. Materiais e UVs de textura das cartas não foram modificados.
 - Light Probes separados por ambiente: Basement_LightProbes sob o Environment externo, redistribuído pelo warehouse; TwentyOne_LightProbes sob TwentyOne, redistribuído pela sala e junto aos jogadores. Removidas posições detectadas dentro de colliders sólidos (margem 0,12 m), mantidas várias alturas. Grupo da sala também atualizado no prefab TwentyOne. As duas distribuições não se sobrepõem espacialmente.

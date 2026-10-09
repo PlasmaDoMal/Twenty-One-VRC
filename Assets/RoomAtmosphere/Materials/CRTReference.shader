@@ -7,7 +7,7 @@ Shader "TwentyOne/CRTReference"
 
         [Header(Text)]
         [Toggle] _ShowText("Show text", Float) = 1
-        [Enum(None,0,YouLost,1,YouWon,2)] _Message("Message (overrides time)", Float) = 0
+        [Enum(None,0,YouLost,1,YouWon,2,Draw,3,P1Won,4,P2Won,5)] _Message("Message (overrides time)", Float) = 0
         _Seconds("Time in seconds (MM:SS). 0 = show the X", Float) = 0
         _TextColor("Text color", Color) = (.85,.95,.90,1)
         _TextHeight("Time text height (fraction of screen height)", Range(.05,.8)) = .25
@@ -78,7 +78,7 @@ Shader "TwentyOne/CRTReference"
 
             // 5x7 font, 7 rows per glyph (top to bottom), bit4 = leftmost column
             // glyph ids: Y=0 O=1 U=2 L=3 S=4 T=5 W=6 N=7
-            static const int FONT[56] = {
+            static const int FONT[98] = {
                 17,17,10,4,4,4,4,          // Y
                 14,17,17,17,17,17,14,      // O
                 17,17,17,17,17,17,14,      // U
@@ -86,11 +86,21 @@ Shader "TwentyOne/CRTReference"
                 15,16,16,14,1,1,30,        // S
                 31,4,4,4,4,4,4,            // T
                 17,17,17,21,21,27,17,      // W
-                17,25,21,19,17,17,17       // N
+                17,25,21,19,17,17,17,      // N
+                30,17,17,17,17,17,30,      // D
+                30,17,17,30,20,18,17,      // R
+                14,17,17,31,17,17,17,      // A
+                30,17,17,30,16,16,16,      // P
+                4,12,4,4,4,4,14,          // 1
+                14,17,1,2,4,8,31          // 2
             };
             // -1 = space
             static const int MSG_LOST[8] = { 0,1,2,-1,3,1,4,5 }; // YOU LOST
             static const int MSG_WON[8]  = { 0,1,2,-1,6,1,7,-1 }; // YOU WON
+
+            static const int MSG_DRAW[4] = { 8,9,10,6 };
+            static const int MSG_P1[6] = { 11,12,-1,6,1,7 };
+            static const int MSG_P2[6] = { 11,13,-1,6,1,7 };
 
             v2f vert(appdata v)
             {
@@ -133,7 +143,7 @@ Shader "TwentyOne/CRTReference"
             // p: centered uv (-.5..+.5). which: 1 = YOU LOST, 2 = YOU WON
             float message(float2 p, int which)
             {
-                uint n = (which == 1) ? 8u : 7u;
+                uint n = which == 1 ? 8u : which == 2 ? 7u : which == 3 ? 4u : 6u;
                 float cols = (float)(n * 6u - 1u);
                 float ps = _MessageWidth * _Aspect / cols;           // size of one LED dot
                 float2 q = float2(p.x * _Aspect, p.y) / ps + float2(cols * 0.5, 3.5);
@@ -145,7 +155,7 @@ Shader "TwentyOne/CRTReference"
                 uint col = cx - ci * 6u;
                 if (col > 4u) return 0.0;                            // gap between letters
 
-                int g = (which == 1) ? MSG_LOST[ci] : MSG_WON[ci];
+                int g = which == 1 ? MSG_LOST[ci] : which == 2 ? MSG_WON[ci] : which == 3 ? MSG_DRAW[ci] : which == 4 ? MSG_P1[ci] : MSG_P2[ci];
                 if (g < 0) return 0.0;                               // space
 
                 uint row  = 6u - (uint)q.y;

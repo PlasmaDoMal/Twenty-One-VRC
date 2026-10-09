@@ -40,7 +40,7 @@ Trumps contínuas são limpas ao fim da rodada.
 ## Configuração atual
 
 - Duas trumps por jogador no início da rodada (`trumpCardsPerRound`).
-- Na primeira rodada também: a distribuição ocorre após registrar as seis
+- Na primeira rodada também: a distribuição ocorre após registrar as quatro
   cartas numéricas iniciais, no estado sincronizado `trumpType`/`trumpOwner`.
   A animação das cartas numéricas pode ainda estar em andamento. As cartas
   tarot aparecem nas áreas `Tarots_illspawnhere_Player1/2` assim que o estado
@@ -50,7 +50,7 @@ Trumps contínuas são limpas ao fim da rodada.
 - Chance de 20% de receber uma trump após Hit (`bonusTrumpChancePercent`).
 - Trumps não usadas são descartadas na rodada seguinte
   (`clearTrumpsEachRound`).
-- Timeout padrão 60 s, zero desliga. Esgotar o tempo apenas passa a vez e reinicia o cronômetro, sem causar dano ou resolver a rodada.
+- Timeout padrão 60 s, zero desliga. Esgotar o tempo encerra a rodada com derrota do jogador da vez e dano normal da aposta.
 
 ## Integração visual
 
@@ -68,12 +68,14 @@ soltar. A carta solta fora da mesa retorna à posição inicial. Ao soltar sobre
 Os efeitos contínuos usam tableTrumpType/tableTrumpOwner. Os objetos usados são reconstruídos por usedTrumpType/usedTrumpOwner e ficam como histórico mesmo quando um efeito contínuo é destruído. A identidade e o
 efeito da carta ficam no estado de rede; o prefab apresenta a carta localmente.
 
-O timeout apenas passa a vez; não gera gancho, dano nem resolução imediata da rodada. Dano só na resolução da rodada.
-Testes finais em duas instâncias reais do VRChat permanecem necessários.
+O timeout encerra a rodada com derrota do jogador da vez; não gera gancho. Dano só na resolução da rodada. Regra atualizada a pedido em 09/10/2026.
+Funcionamento com dois clientes reais e interação VR confirmados pelo usuário em 09/10/2026.
 
-## Fluxo de pickup e uso (07/10/2026)
+As descrições apresentadas nas cartas estão em inglês. Documentação técnica abaixo permanece em português.
 
-VRCDefaultWorldScene agora tem TarotVisuals no objeto Tarot, com os dois Tarots_illspawnhere, um TableTrigger e Pos-Player1/Pos-Player2 na região ocupada pela prévia da mesa. Os spawns são associados à posição física dos slots: quem usa Play1 fica perto de Tarots_illspawnhere_Player2.
+## Fluxo de pickup e uso (histórico de 07/10/2026)
+
+VRCDefaultWorldScene agora tem TarotVisuals no objeto Tarot, com os dois Tarots_illspawnhere, um TableTrigger e Pos-Player1/Pos-Player2 na região ocupada pela prévia da mesa. Os spawns são associados à posição física dos slots: Play1 usa Tarots_illspawnhere_Player1 e Play2 usa Tarots_illspawnhere_Player2 (referências corrigidas em 09/10/2026).
 
 Configure, ApplyMove e CardDropped usam campos públicos e eventos sem argumentos, conforme a regra do MenSharp. Opacidade da descrição e retorno de posição/rotação são interpolados em Update. Cartas disponíveis aparecem nos spawns; ao soltar fora da mesa ou fora da vez, retornam ao spawn. Sobre a mesa e na própria vez, o dealer valida a intenção e consome a carta. Cartas já usadas continuam com descrição e pickup, mas soltá-las só devolve à posição registrada.
 

@@ -1,0 +1,16 @@
+{
+  "edits": [
+    {
+      "old": "string binary, string outputDirectory, string[] sources, List<string> foreign)",
+      "new": "string binary, string outputDirectory, string[] sources, List<string> foreign, string entryClass = null)"
+    },
+    {
+      "old": "        arguments.Add(\"--emit-udon-all\");\n        arguments.Add(\"--out-dir\");\n        arguments.Add(outputDirectory);\n",
+      "new": "        if (entryClass == null)\n        {\n            arguments.Add(\"--emit-udon-all\");\n            arguments.Add(\"--out-dir\");\n            arguments.Add(outputDirectory);\n        }\n        else\n        {\n            arguments.Add(\"--emit-udon\");\n            arguments.Add(entryClass);\n            arguments.Add(\"--out\");\n            arguments.Add(Path.Combine(outputDirectory, entryClass));\n        }\n"
+    },
+    {
+      "old": "        // a crash report, when there is one, is the tail of stderr from the",
+      "new": "        // TwentyOne: recover the 0.1.3 emit-all failure using individual entry points.\n        // Keep the normal asset import/GUID handling in Compile after this returns.\n        if (entryClass == null && process.ExitCode == 1 && stderr.Contains(\"program(s) failed\"))\n        {\n            bool succeeded = true;\n            int count = 0;\n            foreach (string source in sources)\n            {\n                MonoScript script = AssetDatabase.LoadAssetAtPath<MonoScript>(source.Replace('\\\\', '/'));\n                Type entry = script != null ? script.GetClass() : null;\n                if (entry == null || entry.IsAbstract || entry.ContainsGenericParameters\n                    || !typeof(MenSharp.MenSharpBehaviour).IsAssignableFrom(entry)) continue;\n                count++;\n                if (!RunCompiler(binary, outputDirectory, sources, foreign, entry.FullName))\n                {\n                    succeeded = false;\n                    continue;\n                }\n                // Single-entry emission omits source; preserve the asset's original folder/GUID.\n                string metaPath = Path.Combine(outputDirectory, entry.FullName + \".meta.json\");\n                string metadata = File.ReadAllText(metaPath);\n                metadata = metadata.Insert(metadata.IndexOf('{') + 1,\n                    \"\\n  \\\"source\\\": \\\"\" + source.Replace('\\\\', '/') + \"\\\",\");\n                File.WriteAllText(metaPath, metadata, new UTF8Encoding(false));\n            }\n            if (count == 0) succeeded = false;\n            if (succeeded) Debug.Log($\"MenSharp: emit-all fallback compiled {count} individual programs.\");\n            return succeeded;\n        }\n        // a crash report, when there is one, is the tail of stderr from the"
+    }
+  ]
+}
