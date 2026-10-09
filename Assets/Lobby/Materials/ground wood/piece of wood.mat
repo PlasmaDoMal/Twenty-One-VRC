@@ -8,17 +8,25 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: piece of wood
-  m_Shader: {fileID: 4800000, guid: f3e01e55b1896d04a9baf803a39365eb, type: 3}
+  m_Shader: {fileID: 4800000, guid: 9b93d58c29c31d64f8225125d3e307de, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - VIGNETTE_MASKED
+  - _LIGHTINGMODE_REALISTIC
+  - _RIM2STYLE_POIYOMI
+  - _RIMSTYLE_POIYOMI
+  - _STOCHASTICMODE_DELIOT_HEITZ
+  - _STYLIZEDREFLECTIONMODE_UNITYCHAN
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: 2000
   stringTagMap:
-    AllLockedGUIDS: e6d739532e9c14847bfbec1b27b84f87,d870cee608a14d74cb1dba62e28f1b81,97f3ee416086ea24cb7bc9bff7aa6790,87ba714654b8f4d4fa055582b9f0f54c
+    AllLockedGUIDS: 87ba714654b8f4d4fa055582b9f0f54c
+    OriginalKeywords: VIGNETTE_MASKED _LIGHTINGMODE_REALISTIC _RIM2STYLE_POIYOMI
+      _RIMSTYLE_POIYOMI _STOCHASTICMODE_DELIOT_HEITZ _STYLIZEDREFLECTIONMODE_UNITYCHAN
     OriginalShader: .poiyomi/Poiyomi Toon World
     OriginalShaderGUID: aaeaef15081a5154eac3e71b584c5472
     RenderType: Opaque
@@ -58,7 +66,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: b14b5e1aa830c6845bea24c0ba0bb2f2, type: 3}
-        m_Scale: {x: 1, y: 1}
+        m_Scale: {x: 15, y: 15}
         m_Offset: {x: 0, y: 0}
     - _PoiSkinLUT:
         m_Texture: {fileID: 2800000, guid: 3f4037ca345c089469c91571f775829e, type: 3}

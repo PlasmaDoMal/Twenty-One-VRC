@@ -3824,8 +3824,8 @@ Material:
     - s_start_ScrollingEmission1: 0
     - s_start_ScrollingEmission2: 0
     - s_start_ScrollingEmission3: 0
-    - s_start_ShadingAddPass: 0
-    - s_start_ShadingGlobalMask: 0
+    - s_start_ShadingAddPass: 1
+    - s_start_ShadingGlobalMask: 1
     - s_start_Smoothing: 1
     - s_start_SphericalDissolve: 0
     - s_start_SquishBlending: 1
@@ -4550,14 +4550,14 @@ Material:
     - _RgbNormalGPan: {r: 0, g: 0, b: 0, a: 0}
     - _RgbNormalRBlendSources: {r: 0, g: 0, b: 0, a: 0}
     - _RgbNormalRPan: {r: 0, g: 0, b: 0, a: 0}
-    - _Rim2Color: {r: 0.65999997, g: 0.5, b: 0.47999996, a: 1}
+    - _Rim2Color: {r: 0.66, g: 0.5, b: 0.48, a: 1}
     - _Rim2ColorTexPan: {r: 0, g: 0, b: 0, a: 0}
     - _Rim2IndirColor: {r: 1, g: 1, b: 1, a: 1}
     - _Rim2LightColor: {r: 1, g: 1, b: 1, a: 1}
     - _Rim2MaskPan: {r: 0, g: 0, b: 0, a: 0}
     - _Rim2ShadowAlpha: {r: 0, g: 0, b: 0, a: 1}
     - _Rim2TexPan: {r: 0, g: 0, b: 0, a: 0}
-    - _RimColor: {r: 0.65999997, g: 0.5, b: 0.47999996, a: 1}
+    - _RimColor: {r: 0.66, g: 0.5, b: 0.48, a: 1}
     - _RimColorTexPan: {r: 0, g: 0, b: 0, a: 0}
     - _RimEnviroMaskPan: {r: 0, g: 0, b: 0, a: 0}
     - _RimIndirColor: {r: 1, g: 1, b: 1, a: 1}
@@ -4578,13 +4578,13 @@ Material:
     - _Set_HighColorMaskPan: {r: 0, g: 0, b: 0, a: 0}
     - _Set_Rim2LightMaskPan: {r: 0, g: 0, b: 0, a: 0}
     - _Set_RimLightMaskPan: {r: 0, g: 0, b: 0, a: 0}
-    - _Shadow2ndColor: {r: 0.68, g: 0.65999997, b: 0.78999996, a: 1}
+    - _Shadow2ndColor: {r: 0.68, g: 0.66, b: 0.79, a: 1}
     - _Shadow2ndColorTexPan: {r: 0, g: 0, b: 0, a: 0}
     - _Shadow3rdColor: {r: 0, g: 0, b: 0, a: 0}
     - _Shadow3rdColorTexPan: {r: 0, g: 0, b: 0, a: 0}
     - _ShadowAOShift: {r: 0, g: 1, b: 0, a: 1}
     - _ShadowAOShift2: {r: 0, g: 1, b: 0, a: 1}
-    - _ShadowBorderColor: {r: 1, g: 0.09999975, b: 0, a: 1}
+    - _ShadowBorderColor: {r: 1, g: 0.09999972, b: 0, a: 1}
     - _ShadowBorderMaskPan: {r: 0, g: 0, b: 0, a: 0}
     - _ShadowColor: {r: 0.82, g: 0.76, b: 0.85, a: 1}
     - _ShadowColorTexPan: {r: 0, g: 0, b: 0, a: 0}

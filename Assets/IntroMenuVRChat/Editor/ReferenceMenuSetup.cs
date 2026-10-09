@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using System.Collections.Generic;
@@ -48,8 +49,8 @@ public static class ReferenceMenuSetup
     play.pivot=new Vector2(0,0.5f);play.sizeDelta=new Vector2(155,82);play.localScale=Vector3.one;
     anim.playRoot=play;
     var group=play.gameObject.AddComponent<CanvasGroup>();anim.playGroup=group;
-    var label=play.Find("PlayText").GetComponent<Text>();
-    label.font=font;label.fontSize=36;label.fontStyle=FontStyle.Normal;label.alignment=TextAnchor.MiddleLeft;
+    var label=play.Find("PlayText").GetComponent<TextMeshProUGUI>();
+    label.font=AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/MenuVR/Fonts/Oswald SDF.asset");label.fontSize=36;label.fontStyle=FontStyles.Normal;label.alignment=TextAlignmentOptions.MidlineLeft;
     label.rectTransform.anchorMin=label.rectTransform.anchorMax=new Vector2(0,0.5f);
     label.rectTransform.pivot=new Vector2(0,0.5f);label.rectTransform.anchoredPosition=new Vector2(0,0);
     label.rectTransform.sizeDelta=new Vector2(130,70);label.rectTransform.localScale=Vector3.one;
@@ -91,10 +92,10 @@ public static class ReferenceMenuSetup
     var r=o.GetComponent<RawImage>();r.texture=tex;r.material=mat;r.raycastTarget=false;
     r.rectTransform.sizeDelta=new Vector2(1080,540);r.color=new Color(1,1,1,0);return r;
  }
- static Text Text(string name,Transform parent,string value,Font font,Material material,Vector2 position,Vector2 size,int fontSize,TextAnchor alignment){
-    var o=new GameObject(name,typeof(RectTransform),typeof(Text));o.transform.SetParent(parent,false);
-    var t=o.GetComponent<Text>();t.text=value;t.font=font;t.material=material;t.fontSize=fontSize;t.alignment=alignment;t.raycastTarget=false;
-    t.horizontalOverflow=HorizontalWrapMode.Overflow;t.verticalOverflow=VerticalWrapMode.Overflow;t.rectTransform.anchoredPosition=position;t.rectTransform.sizeDelta=size;return t;
+ static TextMeshProUGUI Text(string name,Transform parent,string value,Font font,Material material,Vector2 position,Vector2 size,int fontSize,TextAnchor alignment){
+    var o=new GameObject(name,typeof(RectTransform),typeof(TextMeshProUGUI));o.transform.SetParent(parent,false);
+    var t=o.GetComponent<TextMeshProUGUI>();t.text=value;t.font=AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/MenuVR/Fonts/Oswald SDF.asset");t.fontSize=fontSize;t.alignment=TextAlignmentOptions.Center;t.raycastTarget=false;
+    t.enableWordWrapping=false;t.overflowMode=TextOverflowModes.Overflow;t.rectTransform.anchoredPosition=position;t.rectTransform.sizeDelta=size;return t;
  }
  static AudioSource Audio(string name,Transform parent){var go=new GameObject(name);go.transform.SetParent(parent,false);var a=go.AddComponent<AudioSource>();a.playOnAwake=false;a.spatialBlend=0;return a;}
 }

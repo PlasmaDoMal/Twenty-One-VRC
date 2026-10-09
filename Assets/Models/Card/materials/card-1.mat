@@ -3140,7 +3140,7 @@ Material:
     - m_end_videoEffects: 0
     - m_end_voronoi: 0
     - m_lightingCategory: 0
-    - m_mainCategory: 0
+    - m_mainCategory: 1
     - m_modifierCategory: 0
     - m_raymarchingCategory: 0
     - m_renderingCategory: 0

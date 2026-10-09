@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using MenSharp;
 using UnityEngine;
 using VRC.SDKBase;
+using VRC.Udon;
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class TarotVisuals : MenSharpBehaviour
@@ -13,6 +14,10 @@ public class TarotVisuals : MenSharpBehaviour
     public BoxCollider tableTrigger;
     public Transform[] tableRows;
     public Material[] tarotMaterials;
+    [Tooltip("Local language preference from MenuSystem. Optional; defaults to English.")]
+    public UdonBehaviour languageSource;
+    public int language;
+    public int appliedLanguage = -1;
     public int cardsPerRow = 8;
     public float handSpacing = 0.07f;
     public float tableSpacing = 0.09f;
@@ -91,6 +96,18 @@ public class TarotVisuals : MenSharpBehaviour
     {
             if (handVisuals == null || handVisuals.Length == 0 || Time.time < nextPoll) return;
             nextPoll = Time.time + 0.15f;
+            int selectedLanguage = 0;
+            if (languageSource != null && languageSource.gameObject != gameObject)
+            {
+                object selectedValue = languageSource.GetProgramVariable("language");
+                if (selectedValue != null) selectedLanguage = (int)selectedValue;
+            }
+            language = selectedLanguage == 1 ? 1 : 0;
+            if (appliedLanguage != language)
+            {
+                appliedLanguage = language;
+                RefreshDescriptions();
+            }
             ResolvePendingUse();
             for (int i = 0; i < handVisuals.Length; i++)
             {
@@ -373,6 +390,7 @@ public class TarotVisuals : MenSharpBehaviour
 
     public string TrumpDescription(int type)
     {
+        if (language == 1) return PortugueseDescription(type);
         string name = TrumpSymbol(type);
         string effect = "";
         if (type >= 1 && type <= 6) effect = "Draw " + (type + 1) + " if it is still in the deck.";
@@ -396,6 +414,54 @@ public class TarotVisuals : MenSharpBehaviour
         else if (type == 24) effect = "Your opponent draws a number card. No bonus trump.";
         else if (type == 25) effect = "Replace your number cards with 2 new cards, the first hidden.";
         return name + "\n" + effect;
+    }
+
+    public void RefreshDescriptions()
+    {
+        for (int i = 0; handVisuals != null && i < handVisuals.Length; i++)
+        {
+            TarotPickup card = handVisuals[i];
+            if (card == null) continue;
+            int type = card.tarotType;
+            string translated = TrumpDescription(type);
+            card.description = translated;
+            if (card.descriptionText != null) card.descriptionText.text = translated;
+        }
+        for (int i = 0; tableVisuals != null && i < tableVisuals.Length; i++)
+        {
+            TarotPickup card = tableVisuals[i];
+            if (card == null) continue;
+            int type = card.tarotType;
+            string translated = TrumpDescription(type);
+            card.description = translated;
+            if (card.descriptionText != null) card.descriptionText.text = translated;
+        }
+    }
+
+    private string PortugueseDescription(int type)
+    {
+        string effect = "";
+        if (type >= 1 && type <= 6) effect = "Compre " + (type + 1) + " se ainda estiver no baralho.";
+        else if (type == 7) effect = "Mude o alvo para 17.";
+        else if (type == 8) effect = "Mude o alvo para 24.";
+        else if (type == 9) effect = "Mude o alvo para 27.";
+        else if (type == 10) effect = "Aumente a aposta em 1.";
+        else if (type == 11) effect = "Aumente a aposta em 2.";
+        else if (type == 12) effect = "Reduza a aposta em 1.";
+        else if (type == 13) effect = "Reduza a aposta em 2.";
+        else if (type == 14) effect = "Sobreviva ao dano fatal da rodada com 1 de vida.";
+        else if (type == 15) effect = "Aposta +1. Compre uma carta trump.";
+        else if (type == 16) effect = "Destrua a última trump ativa do adversário.";
+        else if (type == 17) effect = "Destrua a última trump ativa do adversário. Se destruída, compre uma trump.";
+        else if (type == 18) effect = "Ambos os jogadores compram 2 cartas trump.";
+        else if (type == 19) effect = "Compre uma carta numérica oculta.";
+        else if (type == 20) effect = "Compre o número necessário para alcançar o alvo, se disponível.";
+        else if (type == 21) effect = "Remova a última carta numérica do adversário. Preserve a última carta oculta dele.";
+        else if (type == 22) effect = "Devolva sua última carta numérica. Preserve sua última carta oculta.";
+        else if (type == 23) effect = "Troque as últimas cartas numéricas dos jogadores. Preserve a última carta oculta de cada um.";
+        else if (type == 24) effect = "O adversário compra uma carta numérica, sem bônus de trump.";
+        else if (type == 25) effect = "Substitua suas cartas numéricas por 2 novas, sendo a primeira oculta.";
+        return TrumpSymbol(type) + "\n" + effect;
     }
 }
 

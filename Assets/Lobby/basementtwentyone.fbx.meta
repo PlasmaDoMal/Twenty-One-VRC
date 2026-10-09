@@ -30,7 +30,10 @@ ModelImporter:
     animationScaleError: 0.5
     animationWrapMode: 0
     extraExposedTransformPaths: []
-    extraUserProperties: []
+    extraUserProperties:
+    - "#BAKERY{\"meshName\":[\"\u0426\u0438\u043B\u0438\u043D\u0434\u0440.027\",\"Cube.006\",\"Cube.013\",\"Plane.005\",\"Cylinder.002\",\"Medieval
+      Shelf\",\"Plane.001\",\"Cube.004\",\"\u041A\u0443\u0431.018\",\"Cube.011\",\"Cube.003\",\"Plane\",\"\u041A\u0443\u0431.020\",\"Cube.012\",\"Cube\",\"Cube.010\",\"\u041A\u0443\u0431.019\",\"Door\",\"Plane.004\",\"\u0426\u0438\u043B\u0438\u043D\u0434\u0440.026\",\"Cylinder.005\",\"Cube.002\",\"Pipe_1\",\"Cylinder.001\",\"Plane.002\",\"Cylinder.003\",\"\u0426\u0438\u043B\u0438\u043D\u0434\u0440.025\",\"Medieval
+      Chair\",\"Cube.001\",\"Cube.009\",\"Plane.003\",\"Cube.007\",\"Cube.005\",\"RetopoGroup1\",\"Cube.008\",\"Cylinder\",\"\u5BF9\u8C61001\",\"\u0426\u0438\u043B\u0438\u043D\u0434\u0440.028\"],\"padding\":[256,47,73,160,256,193,10,22,256,14,21,5,256,14,20,24,256,52,160,256,25,46,149,256,160,256,256,114,56,46,160,30,23,105,53,256,46,256],\"unwrapper\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}"
     clipAnimations: []
     isReadable: 0
   meshes:

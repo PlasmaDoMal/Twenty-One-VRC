@@ -115,6 +115,7 @@ public class CardDealer : MenSharpBehaviour
 
     [Tooltip("Semente do embaralhamento. E sincronizada, entao todo mundo monta a mesma ordem; o dono sorteia uma nova por rodada.")]
     [UdonSynced] public int actionEpoch;
+    [UdonSynced] public int hitSoundSequence;
     [UdonSynced] public int[] processedActionSeq = new int[2];
     [UdonSynced] public int[] processedActionEpoch = new int[2];
     [UdonSynced] public int[] acceptedActionSeq = new int[2];
@@ -170,7 +171,8 @@ public class CardDealer : MenSharpBehaviour
     [Tooltip("Material de cada carta, na ordem dos valores do baralho: o primeiro material e o deckMinValue, e assim por diante. A carta comprada recebe o material do proprio numero.")]
     public Material[] cardMaterials;
 
-    [Tooltip("Altura Y no mundo para nascer e pousar. Baseada no Card da cena (1.0825), sem consultar esse objeto em runtime. O arco do voo e somado apenas durante a animacao.")]
+    // Legacy serialized field; placement now follows each hand anchor.
+    [HideInInspector]
     public float cardWorldY = 1.0825f;
 
     [Header("Round rules")]
@@ -295,6 +297,7 @@ public class CardDealer : MenSharpBehaviour
     // no proximo FinishRound (ou no StartMatch), entao o resultado continua a
     // vista enquanto a rodada seguinte ainda distribui as cartas.
     [UdonSynced] public int lastRoundWinner = -1;
+    [UdonSynced] public int machineTargetPlayer = -1;
     [UdonSynced] public bool roundResolving;
     [UdonSynced] public double roundEndAt;
     [UdonSynced] public int lastTimeoutPlayer = -1;
@@ -775,6 +778,7 @@ public class CardDealer : MenSharpBehaviour
         roundNumber = 0;
         roundWinner = -1;
         lastRoundWinner = -1;
+        machineTargetPlayer = -1;
         lastTimeoutPlayer = -1;
         roundResolving = false;
         EnsureLife();
@@ -1317,6 +1321,7 @@ public class CardDealer : MenSharpBehaviour
             AcceptStay(player);
             return;
         }
+        hitSoundSequence++;
         consecutiveStays = 0;
         if (bonusTrumpChancePercent > 0
             && Random.Range(0, 100) < bonusTrumpChancePercent)
@@ -1758,6 +1763,7 @@ public class CardDealer : MenSharpBehaviour
         else
         {
             int loser = 1 - winner;
+            machineTargetPlayer = loser;
             if (HasBless() && life[loser] <= damage)
             {
                 life[loser] = 1;
@@ -2181,7 +2187,7 @@ public void RequestUseTrump(int cardIndex)
         if (animate)
         {
             Vector3 spawnPosition = machine.position;
-            spawnPosition.y = cardWorldY;
+            spawnPosition = new Vector3(spawnPosition.x, anchor.position.y, spawnPosition.z);
             cardTransform.position = spawnPosition;
             cardTransform.localRotation = toRotation * Quaternion.Euler(0f, flipAngle, 0f);
             cardTransform.localScale = CardScale() * startScale;
@@ -2276,7 +2282,8 @@ public void RequestUseTrump(int cardIndex)
         Quaternion fromRotation = card.transform.localRotation;
         Vector3 fromScale = card.transform.localScale;
         Transform anchor = card.transform.parent;
-        Vector3 to = anchor.TransformPoint(SlotPosition(slot, anchor));
+        Vector3 toLocal = SlotPosition(slot, anchor);
+        Vector3 to = anchor.TransformPoint(toLocal);
         Quaternion toRotation = SlotRotation(slot);
         Vector3 toScale = CardScale();
 
@@ -2302,7 +2309,7 @@ public void RequestUseTrump(int cardIndex)
         // garante a casa exata, independente do ultimo frame
         if (generation == dealGeneration && card != null)
         {
-            card.transform.position = to;
+            card.transform.localPosition = toLocal;
             card.transform.localRotation = toRotation;
             card.transform.localScale = toScale;
         }
@@ -2340,8 +2347,9 @@ public void RequestUseTrump(int cardIndex)
             (column - (perRow - 1) * 0.5f) * card.x * cardGap,
             0f,
             row * card.z * rowGap);
+        if (layerThickness == 0f) return local;
         Vector3 world = anchor.TransformPoint(local);
-        world.y = cardWorldY + slot * layerThickness;
+        world = new Vector3(world.x, world.y + slot * layerThickness, world.z);
         return anchor.InverseTransformPoint(world);
     }
 
@@ -2350,7 +2358,8 @@ public void RequestUseTrump(int cardIndex)
     {
         int perRow = RowSize();
         int column = slot % perRow;
-        return Quaternion.Euler(0f, (column - (perRow - 1) * 0.5f) * fanAngle, 0f);
+        // Match Card-Placeholder: its 180-degree roll presents the readable face.
+        return Quaternion.Euler(0f, (column - (perRow - 1) * 0.5f) * fanAngle, 180f);
     }
 
     /// <summary>Espaco que a carta ocupa dentro da sua mao, contando as de antes.</summary>

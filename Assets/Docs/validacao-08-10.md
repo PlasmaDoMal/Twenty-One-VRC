@@ -87,3 +87,7 @@ CompileAll do MenSharp apresentou falha global (19 programas, sem diagnóstico e
 A emissão --emit-udon-all do binário MenSharp 0.1.3 recusava 19 programas sem diagnóstico específico; emissão por entry point funcionava. Adicionado fallback em RunCompiler para compilar as classes MenSharp de cada MonoScript com --emit-udon, preservando a emissão de estáticos e restaurando o campo source no metadata individual para manter a pasta de cada programa e seus GUIDs. O fluxo original de importação/rebuild permanece em Compile.
 Correção persistente em Assets/Editor/MenSharpCompileAllPatch.cs e .json: aplicada ao pacote VPM 0.1.3 no carregamento ou pelo menu Tools/TwentyOne/Repair MenSharp Compile All; não sobrescreve outras versões ou fontes inesperadas. Pacotes VPM continuam ignorados pelo Git, mas o instalador do patch é versionável.
 CompileAll validado: 20 programas (19 scripts + MenSharp.Statics); nova execução 20 unchanged, zero erros. UdonSharp CompileAllCsPrograms também concluído sem erros. Assets de programa nas pastas originais; cena e prefabs reimportados, zero Udon nativo sem programSource. Nenhum bake realizado.
+
+
+## Revisão CRT para Bakery (09/10/2026)
+A configuração Mixed acima foi substituída a pedido do usuário: sete luzes CRT em Realtime, sem BakeryPointLight ou outros componentes Bakery Light. A cor continua controlada por CRTScreenTimer.screenLights. Cena e TwentyOne.prefab atualizados; nenhum bake executado.

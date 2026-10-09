@@ -17,6 +17,9 @@ public class IntroMenuController : MenSharpBehaviour
     public GameObject selectionIndicator;
     public AudioSource hoverAudio;
     public AudioSource clickAudio;
+    [Range(0.1f, 3f)] public float clickPitch = 0.75f;
+    public AudioSource basementArrivalAudio;
+    [Range(0.1f, 3f)] public float basementArrivalPitch = 1f;
     public AudioSource transitionAudio;
     public bool immobilizePlayer = false;
     public bool immobilizeDuringTransition = true;
@@ -142,10 +145,10 @@ public class IntroMenuController : MenSharpBehaviour
     {
         if (!initialized || !introReady || state != 0 || warehouseSpawn == null) return;
         if (immobilizeDuringTransition) { localPlayer.Immobilize(true); movementLocked = true; }
-        if (logoAnimator != null) logoAnimator.StopIntro();
+        if (logoAnimator != null) logoAnimator.PressPlay();
         playButton.interactable = false;
         if (selectionIndicator != null && selectionIndicator != gameObject) selectionIndicator.SetActive(false);
-        if (clickAudio != null && clickAudio.clip != null) clickAudio.Play();
+        if (clickAudio != null && clickAudio.clip != null) { clickAudio.pitch = clickPitch; clickAudio.Play(); }
         if (transitionAudio != null && transitionAudio.clip != null) transitionAudio.Play();
         introCompleted = true;
         if (menuGroup != null) { menuGroup.alpha = 1f; menuGroup.interactable = false; }
@@ -171,6 +174,7 @@ public class IntroMenuController : MenSharpBehaviour
         }
         SetFade(1f);
         localPlayer.TeleportTo(warehouseSpawn.position, warehouseSpawn.rotation);
+        if (basementArrivalAudio != null && basementArrivalAudio.clip != null) { basementArrivalAudio.pitch = basementArrivalPitch; basementArrivalAudio.Play(); }
         introMenuRoot.SetActive(false);
         blackoutRoot.SetActive(false);
         elapsed = 0f;

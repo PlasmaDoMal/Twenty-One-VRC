@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using MenSharp;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class LogoIntroAnimator : MenSharpBehaviour
@@ -31,8 +32,8 @@ public class LogoIntroAnimator : MenSharpBehaviour
     [Range(0f,1f)] public float echoFalloff = 0.79f;
     public RawImage logo;
     public RawImage[] echoes;
-    public Text loadingHeading;
-    public Text loadingCaption;
+    public TextMeshProUGUI loadingHeading;
+    public TextMeshProUGUI loadingCaption;
     public RectTransform playRoot;
     public CanvasGroup playGroup;
     public Image indicator;
@@ -47,6 +48,8 @@ public class LogoIntroAnimator : MenSharpBehaviour
     [HideInInspector] public bool playedEntry;
     [HideInInspector] public bool playedMove;
     [HideInInspector] public bool hovered;
+    [HideInInspector] public bool pressed;
+    [HideInInspector] public float buttonScale = 1f;
     [HideInInspector] public Color white = Color.white;
 
     public void BeginIntro()
@@ -56,6 +59,10 @@ public class LogoIntroAnimator : MenSharpBehaviour
         readyForPlay = false;
         playedEntry = false;
         playedMove = false;
+        pressed = false;
+        hovered = false;
+        buttonScale = 1f;
+        if (playRoot != null) playRoot.localScale = Vector3.one;
         Sample(0f);
     }
 
@@ -72,6 +79,14 @@ public class LogoIntroAnimator : MenSharpBehaviour
     public void Update()
     {
         TickAnimation();
+        float target = pressed ? 0.85f : (hovered && readyForPlay ? 1.08f : 1f);
+        buttonScale = Mathf.Lerp(buttonScale, target, 1f - Mathf.Exp(-16f * Time.deltaTime));
+        if (playRoot != null)
+        {
+            playRoot.localScale = new Vector3(buttonScale, buttonScale, 1f);
+            TextMeshProUGUI label = playRoot.GetComponentInChildren<TextMeshProUGUI>();
+            if (label != null) label.color = Color.Lerp(label.color, hovered && readyForPlay && !pressed ? new Color(1f, 0.82f, 0.15f, 1f) : Color.white, 1f - Mathf.Exp(-16f * Time.deltaTime));
+        }
     }
 
     private void TickAnimation()
@@ -115,10 +130,10 @@ public class LogoIntroAnimator : MenSharpBehaviour
             SetLogoPose(echoes[i],oldTime,opacity);
         }
         float px=playX.Evaluate(t);
-        playRoot.anchoredPosition=new Vector2(px-1280f,540f-playTop-playHeight*0.5f);
+        playRoot.anchoredPosition=new Vector2(0f,540f-playTop-playHeight*0.5f + (1280f-px)*0.3f);
         playGroup.alpha=t>=menuStart ? 1f : 0f;
         float selected=(alwaysSelected || hovered) && t>=interactiveTime ? indicatorOpacity : 0f;
-        if (indicator != null) indicator.color = new Color(1f, 1f, 1f, selected);
+        if (indicator != null) indicator.color = hovered && !pressed ? new Color(1f, 0.82f, 0.15f, selected) : new Color(1f, 1f, 1f, selected);
     }
 
     private void SetLogoPose(RawImage image,float t,float opacity)
@@ -132,6 +147,12 @@ public class LogoIntroAnimator : MenSharpBehaviour
 
     public void HoverOn() { hovered = true; }
     public void HoverOff() { hovered = false; }
+    public void PressPlay()
+    {
+        pressed = true;
+        hovered = false;
+        StopIntro();
+    }
     public void StopIntro()
     {
         running=false;

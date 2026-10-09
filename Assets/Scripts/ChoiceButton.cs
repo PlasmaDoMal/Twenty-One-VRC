@@ -23,6 +23,7 @@ public class ChoiceButton : MenSharpBehaviour
 {
     [Header("Turn source")]
     public CardDealer dealer;
+    public VRC.Udon.UdonBehaviour audioController;
 
     [Tooltip("O botao que some quando o jogador escolhe.")]
     public FadeRise fade;
@@ -40,6 +41,7 @@ public void ChooseHit()
     {
         if (busy || dealer == null || !dealer.CanLocalPlayerAct()) return;
         busy = true;
+        if (audioController != null && audioController.gameObject != gameObject) audioController.SendCustomEvent("PlayChoice");
         dealer.RequestHit();
         Hide();
     }
@@ -49,6 +51,7 @@ public void ChooseStay()
     {
         if (busy || dealer == null || !dealer.CanLocalPlayerAct()) return;
         busy = true;
+        if (audioController != null && audioController.gameObject != gameObject) audioController.SendCustomEvent("PlayChoice");
         dealer.RequestStay();
         Hide();
     }

@@ -71,7 +71,7 @@ efeito da carta ficam no estado de rede; o prefab apresenta a carta localmente.
 O timeout encerra a rodada com derrota do jogador da vez; não gera gancho. Dano só na resolução da rodada. Regra atualizada a pedido em 09/10/2026.
 Funcionamento com dois clientes reais e interação VR confirmados pelo usuário em 09/10/2026.
 
-As descrições apresentadas nas cartas estão em inglês. Documentação técnica abaixo permanece em português.
+As descrições das 25 cartas podem aparecer em inglês (padrão) ou português. A preferência local é escolhida em MenuSystem > Settings / Configurações e atualiza cartas novas e existentes sem reiniciar o pickup ou o fade. Hit e Stay permanecem iguais. A documentação técnica abaixo permanece em português.
 
 ## Fluxo de pickup e uso (histórico de 07/10/2026)
 

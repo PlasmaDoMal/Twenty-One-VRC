@@ -12,6 +12,7 @@ public class WorldMatchSession : UdonSharpBehaviour
     public GameObject[] lobbyRoots;
     public GameObject[] introVisualRoots;
     public UdonBehaviour dealer;
+    public UdonBehaviour machineKillerMotion;
     public GameObject[] playerSlots;
     public Transform play1;
     public Transform play2;
@@ -38,6 +39,7 @@ public class WorldMatchSession : UdonSharpBehaviour
     private Material fadeMaterial;
     private bool wasParticipant;
     private float nextSeatCleanup;
+    private float finalMachineReturnAt;
 
     private void Start()
     {
@@ -203,7 +205,16 @@ public class WorldMatchSession : UdonSharpBehaviour
             requestedEpoch = launchEpoch;
             dealer.SendCustomEvent("RequestStartMatch");
         }
-        if (launching && localSeat == 0 && requestedEpoch == launchEpoch && (bool)dealer.GetProgramVariable("matchOver")) _RequestLeave();
+        if (launching && localSeat == 0 && requestedEpoch == launchEpoch && (bool)dealer.GetProgramVariable("matchOver"))
+        {
+            // Keep both players at the table until the final machine movement finishes.
+            if (machineKillerMotion == null) { _RequestLeave(); return; }
+            if (finalMachineReturnAt == 0f)
+                finalMachineReturnAt = Time.time + Mathf.Max(0.1f, (float)machineKillerMotion.GetProgramVariable("moveDuration")) + 1f;
+            if ((bool)machineKillerMotion.GetProgramVariable("finalArrivalComplete") || Time.time >= finalMachineReturnAt)
+                _RequestLeave();
+        }
+        else finalMachineReturnAt = 0f;
     }
     private void BeginTransition(bool toLobby)
     {
