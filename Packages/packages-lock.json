@@ -297,14 +297,6 @@
         "com.unity.ai.navigation": "1.1.5"
       }
     },
-    "dev.onevr.vrworldtoolkit": {
-      "version": "file:dev.onevr.vrworldtoolkit",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {
-        "com.unity.postprocessing": "3.1.1"
-      }
-    },
     "idv.jlchntoz.lazyswitch": {
       "version": "file:idv.jlchntoz.lazyswitch",
       "depth": 0,
@@ -325,12 +317,6 @@
     },
     "io.tesca.mensharp": {
       "version": "file:io.tesca.mensharp",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
-    "io.tesca.vpm-package-manifest": {
-      "version": "file:io.tesca.vpm-package-manifest",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}

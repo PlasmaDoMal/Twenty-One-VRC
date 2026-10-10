@@ -1518,6 +1518,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   introSpawn: {fileID: 4304829986830962946}
   warehouseSpawn: {fileID: 0}
+  matchSession: {fileID: 0}
   introMenuRoot: {fileID: 5799710067308555330}
   blackoutRoot: {fileID: 6960093276729099691}
   fadeRenderer: {fileID: 8162069943878660359}
